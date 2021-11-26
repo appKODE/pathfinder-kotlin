@@ -1,113 +1,93 @@
 package ru.kode.pathfinder
 
-import java.util.UUID
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
-data class UrlSpec(
-  /**
-   * Unique identifier of this url specification
-   */
-  val id: UUID,
-
-  /**
-   * A path template relative to baseUrl.
-   *
-   * Can contain variables which must be surrounded by curly braces.
-   *
-   * Examples:
-   * ```
-   * "users/list"
-   * "categories/{categoryId}/users/{userId}"
-   * ```
-   */
-  val pathTemplate: String,
-
-  /**
-   * A list of query parameter names which will be accessible for modification.
-   */
-  val queryParameterNames: List<String>,
-
-  /**
-   * Additional information about the url
-   */
-  val meta: Meta?
+class PathFinder private constructor(
+  val store: Store,
 ) {
 
-  data class Meta(
-    val httpMethod: HttpMethod,
-    val tags: List<String>,
-    val description: String,
-  )
+  companion object {
+    suspend fun create(store: Store, configuration: Configuration): PathFinder {
+      val pathFinder = PathFinder(store)
+      withContext(Dispatchers.IO) {
+        store.saveConfiguration(configuration)
+        pathFinder.updateResolverOnEnvironmentSwitch()
+      }
+      return pathFinder
+    }
+  }
 
-  enum class HttpMethod { GET, POST, PUT, UPDATE, DELETE }
+  private val storeScope = CoroutineScope(Dispatchers.IO)
+
+  private var currentResolver: PathResolver = NotInitializedResolver
+
+  private var _currentEnvironment: Environment? = null
+  val currentEnvironment: Environment get() = _currentEnvironment
+    ?: error("no current environment. Is PathFinder initialized?")
+
+  private val listeners: MutableList<Listener> = mutableListOf()
+
+  init {
+    store.activeEnvironmentId().addListener(object : Query.Listener {
+      override fun queryResultsChanged() {
+        storeScope.launch {
+          updateResolverOnEnvironmentSwitch()
+        }
+      }
+    })
+  }
+
+  suspend fun buildUrl(
+    id: UrlSpecId,
+    pathVariables: Map<String, String> = emptyMap(),
+    queryParameters: Map<String, String> = emptyMap(),
+  ): String {
+    return currentResolver.buildUrl(id, pathVariables, queryParameters)
+  }
+
+  private fun updateResolverOnEnvironmentSwitch() {
+    val environmentId = store.activeEnvironmentId().execute()
+      ?: error("internal error: no active environment id")
+    val environment = store.findEnvironmentById(environmentId).execute()
+      ?: error("internal error: no active environment by id = ${environmentId.value}")
+    currentResolver = DefaultResolver(store, environmentId)
+    _currentEnvironment = environment
+    listeners.forEach { it.onEnvironmentSwitch(environmentId) }
+  }
+
+  interface Listener {
+    /**
+     * Will be called on the environment change.
+     *
+     * WARNING: This method will be called on the background thread
+     */
+    fun onEnvironmentSwitch(environmentId: EnvironmentId)
+  }
+
+  fun switchEnvironment(environmentId: EnvironmentId) {
+    storeScope.launch {
+      store.changeActiveEnvironment(environmentId)
+    }
+  }
+
+  fun addListener(listener: Listener) {
+    listeners.add(listener)
+  }
+
+  fun removeListener(listener: Listener) {
+    listeners.remove(listener)
+  }
 }
 
-data class Environment(
-  val id: UUID,
-  val name: String,
-  val baseUrl: String,
-)
-
-interface PathFinderBuilder {
-  fun build(specifications: Map<Environment, List<UrlSpec>>): PathFinder
-}
-
-interface PathFinder {
-  val currentResolver: PathResolver
-
-  fun switchEnvironment(environmentId: UUID): PathResolver
-
-  val environments: List<Environment>
-  val urlSpecs: List<UrlSpec>
-
-  fun preConfigureUrl(
-    urlId: UUID,
-    pathParameters: Map<String, String>? = null,
-    queryParameters: Map<String, String>? = null,
-    customBaseUrl: String? = null,
-    customHttpCode: Int? = null,
-    customExampleName: String? = null,
-  )
-}
-
-interface PathResolver {
-  /**
-   * Builds url for specification [id].
-   *
-   * Example:
-   * ```
-   * //
-   * // for UrlSpec("categories/{categoryId}/users/{userId}", queryParameters = listOf("sort", "key"))
-   * //
-   * buildUrl(
-   *   id = myUrlId,
-   *   pathParameters = mapOf("categoryId" to "333", "userId" to "444"),
-   *   queryParameters = mapOf("sort" to "desc", "key" to "none", "random" to "true")
-   * )
-   * ```
-   *
-   * will produce
-   *
-   * ```
-   * "categories/333/users/444?sort=desc&key=none&random=true"
-   * ```
-   */
-  fun buildUrl(
-    id: UUID,
-    pathParameters: Map<String, String>,
+private val NotInitializedResolver = object : PathResolver {
+  override suspend fun buildUrl(
+    id: UrlSpecId,
+    pathVariables: Map<String, String>,
     queryParameters: Map<String, String>,
-  ): String
+  ): String {
+    error("cannot resolve url: store not initialized. Wait for 'onEnvironmentSwitch' callback and then retry.")
+  }
 }
-
-//
-// Use case:
-//
-// 1. User of DEBUG PANEL passes Map<Environment, List<UrlSpec>> as its configuration parameters
-//
-// 2. DEBUG PANEL internally creates PathFinder, sets default environment, orchestrates environment switching
-//    by calling 'switchEnvironment'
-//
-// 3. DEBUG_PANEL calls PathFinder.preConfigureUrl when user changes url settings in DEBUG PANEL
-//
-// 3. DEBUG PANEL *hides* PathFinder, *hides* switchEnvironment()/preConfigureUrl()/etc and client
-//    of debug panel only receives access to a 'currentResolver' property which it can use to call `buildUrl`
-//

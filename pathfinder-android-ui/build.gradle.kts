@@ -1,7 +1,8 @@
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
-  id("com.android.library") version "7.0.3"
+  kotlin("android")
+  id("com.android.library")
 }
 
 android {
@@ -16,11 +17,15 @@ android {
 dependencies {
   api(project(":pathfinder"))
 
+  api(fileTree(File(rootDir, "libs")))
+
   implementation(kotlin("stdlib-jdk8"))
   implementation(libs.bundles.coroutines)
   implementation(libs.timber)
   implementation(libs.unicornRxJava2)
   implementation(libs.rxRelay)
+  implementation(libs.rxJava2)
+  implementation(libs.rxAndroid)
 
   testImplementation(libs.bundles.koTest)
 }

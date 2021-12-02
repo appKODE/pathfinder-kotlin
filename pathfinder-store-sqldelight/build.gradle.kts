@@ -3,6 +3,7 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 plugins {
   kotlin("android")
   id("com.android.library")
+  id("com.squareup.sqldelight")
 }
 
 android {
@@ -12,24 +13,22 @@ android {
     minSdk = 26
     targetSdk = 31
   }
+}
 
-  composeOptions {
-    kotlinCompilerExtensionVersion = libs.versions.compose.get()
-  }
 
-  buildFeatures {
-    compose = true
+sqldelight {
+  database("PathFinderDatabase") {
+    packageName = "ru.kode.pathfinder.android.store"
   }
 }
 
 dependencies {
   api(project(":pathfinder"))
-  implementation(project(":pathfinder-android-ui"))
 
   implementation(kotlin("stdlib-jdk8"))
-  implementation(libs.bundles.compose)
+  implementation(libs.sqlDelightAndroidDriver)
 }
 
 tasks.withType<KotlinCompile> {
-  kotlinOptions.moduleName = "pathfinder-android-compose"
+  kotlinOptions.moduleName = "pathfinder-store-sqldelight"
 }

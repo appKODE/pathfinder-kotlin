@@ -1,0 +1,22 @@
+CREATE TABLE UrlConfiguration (
+  id TEXT PRIMARY KEY,
+  specId TEXT NOT NULL,
+  environmentId TEXT NOT NULL,
+  pathTemplate TEXT NOT NULL,
+  name TEXT NOT NULL,
+  httpMethod TEXT NOT NULL
+);
+
+insertOne:
+INSERT OR REPLACE INTO UrlConfiguration
+VALUES ?;
+
+findByEnvironmentId:
+SELECT id, specId, pathTemplate, name, httpMethod
+FROM UrlConfiguration
+WHERE UrlConfiguration.environmentId = ?;
+
+findByEnvironmentAndSpecId:
+SELECT id, specId, pathTemplate, name, httpMethod
+FROM UrlConfiguration
+WHERE UrlConfiguration.environmentId = ? AND UrlConfiguration.specId = ?;

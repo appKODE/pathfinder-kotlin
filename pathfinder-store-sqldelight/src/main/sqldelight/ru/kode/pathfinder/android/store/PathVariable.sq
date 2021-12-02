@@ -1,0 +1,23 @@
+CREATE TABLE PathVariable (
+  urlConfigurationId TEXT NOT NULL,
+  name TEXT NOT NULL,
+  value TEXT NOT NULL
+);
+
+insertOne:
+INSERT INTO PathVariable
+VALUES ?;
+
+findAll:
+SELECT urlConfigurationId, name, value
+FROM PathVariable;
+
+updateOne:
+UPDATE PathVariable
+SET value = :value
+WHERE urlConfigurationId = :urlConfigurationId AND name = :name;
+
+findByConfigurationId:
+SELECT name, value
+FROM PathVariable
+WHERE urlConfigurationId = ?;

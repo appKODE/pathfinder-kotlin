@@ -1,0 +1,23 @@
+CREATE TABLE QueryParameter (
+  urlConfigurationId TEXT NOT NULL,
+  name TEXT NOT NULL,
+  value TEXT NOT NULL
+);
+
+insertOne:
+INSERT INTO QueryParameter
+VALUES ?;
+
+findAll:
+SELECT urlConfigurationId, name, value
+FROM QueryParameter;
+
+updateOne:
+UPDATE QueryParameter
+SET value = :value
+WHERE urlConfigurationId = :urlConfigurationId AND name = :name;
+
+findByConfigurationId:
+SELECT name, value
+FROM QueryParameter
+WHERE urlConfigurationId = ?;

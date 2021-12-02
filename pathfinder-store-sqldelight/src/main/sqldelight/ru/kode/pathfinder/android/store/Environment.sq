@@ -1,0 +1,29 @@
+import kotlin.collections.List;
+
+CREATE TABLE Environment (
+  id TEXT PRIMARY KEY,
+  name TEXT NOT NULL,
+  baseUrl TEXT NOT NULL,
+  queryParameters TEXT AS List<String>
+);
+
+insertOne:
+INSERT OR REPLACE
+INTO Environment
+VALUES ?;
+
+findAll:
+SELECT id, name, baseUrl, queryParameters
+FROM Environment;
+
+findById:
+SELECT id, name, baseUrl, queryParameters
+FROM Environment
+WHERE id = ?;
+
+deleteAll {
+  DELETE FROM Environment;
+  DELETE FROM PathVariable;
+  DELETE FROM QueryParameter;
+  DELETE FROM UrlConfiguration;
+}

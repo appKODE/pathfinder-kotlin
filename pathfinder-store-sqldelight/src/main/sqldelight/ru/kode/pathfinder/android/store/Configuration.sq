@@ -1,0 +1,33 @@
+CREATE TABLE Configuration (
+  id INTEGER NOT NULL PRIMARY KEY,
+  activeEnvironmentId TEXT NOT NULL,
+  version INTEGER
+);
+
+upsertActiveEnvironmentId {
+  UPDATE Configuration
+  SET activeEnvironmentId = :activeEnvironmentId
+  WHERE id = 1;
+
+  INSERT OR IGNORE INTO Configuration
+  VALUES (1, NULL, :activeEnvironmentId);
+}
+
+upsertVersion {
+  UPDATE Configuration
+  SET version = :version, activeEnvironmentId = :activeEnvironmentId
+  WHERE id = 1;
+
+  INSERT OR IGNORE INTO Configuration
+  VALUES (1, :activeEnvironmentId, :version);
+}
+
+findActiveEnvironment:
+SELECT activeEnvironmentId
+FROM Configuration
+WHERE id = 1;
+
+findVersion:
+SELECT version
+FROM Configuration
+WHERE id = 1;

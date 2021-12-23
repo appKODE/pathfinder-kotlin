@@ -44,7 +44,6 @@ import ru.kode.pathfinder.android.ui.screen.urllist.entity.PathVariableEditorPro
 import ru.kode.pathfinder.android.ui.screen.urllist.entity.QueryParameterEditorProps
 
 internal class UrlListUi : BaseScreenUi<ViewState, ViewIntents>(ViewIntents()) {
-  @ExperimentalMaterialApi
   @Composable
   override fun Content(viewState: ViewState) {
     val content = viewState.content ?: return

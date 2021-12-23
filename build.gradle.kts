@@ -11,7 +11,9 @@ plugins {
   kotlin("jvm") version libs.versions.kotlin apply false
   kotlin("android") version libs.versions.kotlin apply false
   id("com.android.library") version "7.0.3" apply false
+
   alias(libs.plugins.sqlDelight) apply false
+  alias(libs.plugins.spotless)
 
   `maven-publish`
   signing
@@ -25,31 +27,21 @@ allprojects {
   }
 }
 
-val ktlint: Configuration by configurations.creating
-
-dependencies {
-  ktlint(libs.ktlint) {
-    // this is required due to https://github.com/pinterest/ktlint/issues/1114
-    attributes {
-      attribute(Bundling.BUNDLING_ATTRIBUTE, getObjects().named(Bundling::class, Bundling.EXTERNAL))
-    }
+spotless {
+  kotlin {
+    target("**/*.kt")
+    targetExclude("!**/build/**/*.*")
+    ktlint(libs.versions.ktlint.get()).userData(mapOf("indent_size" to "2", "max_line_length" to "120"))
+    trimTrailingWhitespace()
+    endWithNewline()
   }
-}
 
-val ktlintCheck by tasks.creating(JavaExec::class) {
-  description = "Check Kotlin code style."
-  classpath = ktlint
-  group = "verification"
-  main = "com.pinterest.ktlint.Main"
-  args = listOf("**/src/**/*.kt", "!**/build/**/*.kt")
-}
-
-val ktlintFormat by tasks.creating(JavaExec::class) {
-  description = "Fix Kotlin code style deviations."
-  classpath = ktlint
-  group = "verification"
-  main = "com.pinterest.ktlint.Main"
-  args = listOf("-F", "**/src/**/*.kt", "!**/build/**/*.kt")
+  kotlinGradle {
+    target("**/*.gradle.kts")
+    ktlint(libs.versions.ktlint.get()).userData(mapOf("indent_size" to "2", "max_line_length" to "120"))
+    trimTrailingWhitespace()
+    endWithNewline()
+  }
 }
 
 subprojects {
@@ -64,5 +56,4 @@ subprojects {
   tasks.withType<Test> {
     useJUnitPlatform()
   }
-
 }

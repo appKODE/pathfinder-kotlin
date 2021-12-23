@@ -3,8 +3,8 @@ rootProject.name = "pathfinder-kotlin"
 include("pathfinder")
 include("pathfinder-android-ui")
 include("pathfinder-android-ui-compose")
+include("pathfinder-android-sample")
 include("pathfinder-store-sqldelight")
-include("pathfinder-sample")
 
 enableFeaturePreview("VERSION_CATALOGS")
 

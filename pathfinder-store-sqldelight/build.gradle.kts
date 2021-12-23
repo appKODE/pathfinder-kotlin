@@ -15,7 +15,6 @@ android {
   }
 }
 
-
 sqldelight {
   database("PathFinderDatabase") {
     packageName = "ru.kode.pathfinder.android.store"

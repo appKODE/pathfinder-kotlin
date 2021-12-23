@@ -2,10 +2,10 @@ package ru.kode.pathfinder.android.store.mapper
 
 import ru.kode.pathfinder.Environment
 import ru.kode.pathfinder.EnvironmentId
-import ru.kode.pathfinder.UrlConfiguration as UrlConfigurationDomainModel
 import ru.kode.pathfinder.UrlSpec
 import ru.kode.pathfinder.android.store.FindByEnvironmentAndSpecId
 import ru.kode.pathfinder.android.store.UrlConfiguration
+import ru.kode.pathfinder.UrlConfiguration as UrlConfigurationDomainModel
 import ru.kode.pathfinder.android.store.Environment as EnvironmentStorageModel
 import ru.kode.pathfinder.android.store.pathVariable.FindByConfigurationId as FindPathVarByConfigurationId
 import ru.kode.pathfinder.android.store.queryParameter.FindByConfigurationId as FindQueryVarByConfigurationId

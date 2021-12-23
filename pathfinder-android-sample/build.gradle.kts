@@ -2,7 +2,7 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
   kotlin("android")
-  id("com.android.library")
+  id("com.android.application")
 }
 
 android {
@@ -23,14 +23,15 @@ android {
 }
 
 dependencies {
-  api(project(":pathfinder"))
-  implementation(project(":pathfinder-android-ui"))
+  implementation(project(":pathfinder-android-ui-compose"))
 
-  implementation(kotlin("stdlib-jdk8"))
+  implementation(libs.bundles.coroutines)
   implementation(libs.bundles.compose)
+  implementation(libs.activityCompose)
+  implementation(libs.androidXCoreKtx)
+  implementation(libs.appCompat)
 }
 
 tasks.withType<KotlinCompile> {
-  kotlinOptions.moduleName = "pathfinder-android-compose"
-  kotlinOptions.freeCompilerArgs += "-opt-in=androidx.compose.material.ExperimentalMaterialApi"
+  kotlinOptions.moduleName = "pathfinder-android-sample"
 }

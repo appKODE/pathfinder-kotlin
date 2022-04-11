@@ -24,6 +24,7 @@ android {
 
 dependencies {
   implementation(project(":pathfinder-android-ui-compose"))
+  implementation(project(":pathfinder-store-sqldelight"))
 
   implementation(libs.bundles.coroutines)
   implementation(libs.bundles.compose)

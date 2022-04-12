@@ -44,6 +44,8 @@ class ConfigurationPanelController(
       onDispose {
         currentPresenter?.detachView()
         currentPresenter?.destroy()
+        currentPresenter = null
+        currentUi = null
       }
     }
   }

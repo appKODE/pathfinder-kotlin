@@ -1,11 +1,9 @@
 package ru.kode.pathfinder.sample.android
 
 import android.os.Bundle
-import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -15,7 +13,6 @@ import androidx.compose.material.Button
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.State
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -37,7 +34,6 @@ import ru.kode.pathfinder.PathFinder
 import ru.kode.pathfinder.UrlSpec
 import ru.kode.pathfinder.UrlSpecId
 import ru.kode.pathfinder.android.store.SqlDelightStore
-import ru.kode.pathfinder.android.ui.compose.ConfigurationPanelController
 import ru.kode.pathfinder.android.ui.compose.createConfigurationPanelController
 
 class MainActivity : ComponentActivity() {
@@ -60,7 +56,11 @@ class MainActivity : ComponentActivity() {
         controller?.Content()
       } else {
         if (pathFinder != null) {
-          MainScreen(pathFinder = pathFinder!!, urlSpecId = configuration.urlSpecs[1].id, onConfigure = { showConfigurator = !showConfigurator })
+          MainScreen(
+            pathFinder = pathFinder!!,
+            urlSpecId = configuration.urlSpecs[1].id,
+            onConfigure = { showConfigurator = !showConfigurator },
+          )
         }
       }
     }

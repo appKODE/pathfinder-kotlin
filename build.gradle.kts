@@ -10,7 +10,7 @@ buildscript {
 plugins {
   kotlin("jvm") version libs.versions.kotlin apply false
   kotlin("android") version libs.versions.kotlin apply false
-  id("com.android.library") version "7.0.3" apply false
+  id("com.android.library") version "7.3.1" apply false
 
   alias(libs.plugins.sqlDelight) apply false
   alias(libs.plugins.spotless)

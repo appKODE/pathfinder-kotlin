@@ -2,6 +2,8 @@ package ru.kode.pathfinder
 
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
@@ -14,7 +16,6 @@ class PathFinder private constructor(
       val pathFinder = PathFinder(store)
       withContext(Dispatchers.IO) {
         store.saveConfiguration(configuration)
-        pathFinder.updateResolverOnEnvironmentSwitch()
       }
       return pathFinder
     }
@@ -31,13 +32,17 @@ class PathFinder private constructor(
   private val listeners: MutableList<Listener> = mutableListOf()
 
   init {
-    store.activeEnvironmentId().addListener(object : Query.Listener {
-      override fun queryResultsChanged() {
-        storeScope.launch {
-          updateResolverOnEnvironmentSwitch()
-        }
+    store.activeEnvironmentId()
+      .onEach { environmentId ->
+        val envId = environmentId
+          ?: error("internal error: no active environment id")
+        val environment = store.readEnvironmentById(envId)
+          ?: error("internal error: no active environment by id = ${envId.value}")
+        currentResolver = DefaultResolver(store, envId)
+        _currentEnvironment = environment
+        listeners.forEach { it.onEnvironmentSwitch(envId) }
       }
-    })
+      .launchIn(storeScope)
   }
 
   suspend fun buildUrl(
@@ -46,16 +51,6 @@ class PathFinder private constructor(
     queryParameters: Map<String, String> = emptyMap(),
   ): String {
     return currentResolver.buildUrl(id, pathVariables, queryParameters)
-  }
-
-  private fun updateResolverOnEnvironmentSwitch() {
-    val environmentId = store.activeEnvironmentId().execute()
-      ?: error("internal error: no active environment id")
-    val environment = store.findEnvironmentById(environmentId).execute()
-      ?: error("internal error: no active environment by id = ${environmentId.value}")
-    currentResolver = DefaultResolver(store, environmentId)
-    _currentEnvironment = environment
-    listeners.forEach { it.onEnvironmentSwitch(environmentId) }
   }
 
   interface Listener {

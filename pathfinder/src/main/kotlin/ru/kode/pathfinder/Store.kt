@@ -1,16 +1,19 @@
 package ru.kode.pathfinder
 
+import kotlinx.coroutines.flow.Flow
+
 interface Store {
   fun saveConfiguration(configuration: Configuration)
 
   fun changeActiveEnvironment(id: EnvironmentId)
-  fun activeEnvironmentId(): Query<EnvironmentId?>
+  fun activeEnvironmentId(): Flow<EnvironmentId?>
+  suspend fun readActiveEnvironmentId(): EnvironmentId?
 
-  fun findEnvironments(): Query<List<Environment>>
-  fun findEnvironmentById(id: EnvironmentId): Query<Environment?>
+  fun findEnvironments(): Flow<List<Environment>>
+  suspend fun readEnvironmentById(id: EnvironmentId): Environment?
 
-  fun findUrlConfigurations(environmentId: EnvironmentId): Query<List<UrlConfiguration>>
-  fun findUrlConfiguration(urlSpecId: UrlSpecId, environmentId: EnvironmentId): Query<UrlConfiguration?>
+  fun urlConfigurations(environmentId: EnvironmentId): Flow<List<UrlConfiguration>>
+  suspend fun readUrlConfiguration(urlSpecId: UrlSpecId, environmentId: EnvironmentId): UrlConfiguration?
 
   fun updatePathVariables(id: UrlConfiguration.Id, pathVariableValues: Map<String, String>)
   fun updateQueryParameters(id: UrlConfiguration.Id, queryParameterValues: Map<String, String>)

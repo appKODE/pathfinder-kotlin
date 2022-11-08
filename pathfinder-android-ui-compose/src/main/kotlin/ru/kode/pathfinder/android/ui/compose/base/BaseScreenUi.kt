@@ -5,25 +5,21 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-import com.google.accompanist.insets.ProvideWindowInsets
-import ru.kode.pathfinder.android.ui.mvi.BaseViewIntents
-import ru.kode.pathfinder.android.ui.mvi.MviView
+import ru.kode.amvi.viewmodel.ViewIntents
 
-internal abstract class BaseScreenUi<VS : Any, VI : BaseViewIntents>(screenIntents: VI) : MviView<VS, VI> {
+internal abstract class BaseScreenUi<VS : Any, VI : ViewIntents>(screenIntents: VI) {
   private var viewState by mutableStateOf<VS?>(value = null)
 
-  override fun render(viewState: VS) {
+  fun render(viewState: VS) {
     this.viewState = viewState
   }
 
-  override val intents = screenIntents
+  val intents = screenIntents
 
   @Composable
   fun Content() {
     MaterialTheme {
-      ProvideWindowInsets(consumeWindowInsets = false) {
-        viewState?.also { Content(it) }
-      }
+      viewState?.also { Content(it) }
     }
   }
 

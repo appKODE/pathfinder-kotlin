@@ -19,7 +19,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import ru.kode.pathfinder.android.ui.compose.R
-import ru.kode.pathfinder.android.ui.screen.urllist.entity.QueryParameterEditorProps
+import ru.kode.pathfinder.android.ui.compose.screen.urllist.entity.QueryParameterEditorProps
 
 @Composable
 internal fun PathVariableEditor(

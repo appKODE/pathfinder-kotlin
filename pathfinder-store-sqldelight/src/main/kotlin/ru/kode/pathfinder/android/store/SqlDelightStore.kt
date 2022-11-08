@@ -3,10 +3,15 @@ package ru.kode.pathfinder.android.store
 import android.content.Context
 import android.util.Log
 import com.squareup.sqldelight.android.AndroidSqliteDriver
+import com.squareup.sqldelight.runtime.coroutines.asFlow
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.withContext
 import ru.kode.pathfinder.Configuration
 import ru.kode.pathfinder.Environment
 import ru.kode.pathfinder.EnvironmentId
-import ru.kode.pathfinder.Query
 import ru.kode.pathfinder.Store
 import ru.kode.pathfinder.UrlConfiguration
 import ru.kode.pathfinder.UrlSpec
@@ -16,8 +21,6 @@ import ru.kode.pathfinder.android.store.mapper.mapToEnvironmentDomainModel
 import ru.kode.pathfinder.android.store.mapper.toDomainModel
 import ru.kode.pathfinder.android.store.mapper.toStorageModel
 import ru.kode.pathfinder.android.store.mapper.toUrlConfigurationStorageModel
-import ru.kode.pathfinder.map
-import java.util.concurrent.CopyOnWriteArrayList
 import ru.kode.pathfinder.android.store.Environment as EnvironmentStorageModel
 
 class SqlDelightStore(context: Context) : Store {
@@ -77,10 +80,10 @@ class SqlDelightStore(context: Context) : Store {
       val configuration = spec.toUrlConfigurationStorageModel(environment.id)
       database.urlConfigurationQueries.insertOne(configuration)
       environment.queryParameters?.forEach { name ->
-        database.queryParameterQueries.insertOne(QueryParameter(configuration.id, name, value = ""))
+        database.queryParameterQueries.insertOne(QueryParameter(configuration.id, name, value_ = ""))
       }
       spec.pathVariables.forEach { name ->
-        database.pathVariableQueries.insertOne(PathVariable(configuration.id, name, value = ""))
+        database.pathVariableQueries.insertOne(PathVariable(configuration.id, name, value_ = ""))
       }
     }
   }
@@ -89,33 +92,40 @@ class SqlDelightStore(context: Context) : Store {
     database.configurationQueries.upsertActiveEnvironmentId(id.value)
   }
 
-  override fun activeEnvironmentId(): Query<EnvironmentId?> {
+  override fun activeEnvironmentId(): Flow<EnvironmentId?> {
     return database.configurationQueries
       .findActiveEnvironment()
-      .toPathFinderQuery { rows -> rows.firstOrNull()?.let { EnvironmentId(it) } }
+      .asFlow()
+      .map { it.executeAsOneOrNull()?.let(::EnvironmentId) }
   }
 
-  override fun findEnvironments(): Query<List<Environment>> {
+  override suspend fun readActiveEnvironmentId(): EnvironmentId? {
+    return withContext(Dispatchers.IO) {
+      database.configurationQueries.findActiveEnvironment().executeAsOneOrNull()?.let(::EnvironmentId)
+    }
+  }
+
+  override fun findEnvironments(): Flow<List<Environment>> {
     return database.environmentQueries
       .findAll(::mapToEnvironmentDomainModel)
-      .toPathFinderQuery { rows -> rows }
+      .asFlow()
+      .map { it.executeAsList() }
   }
 
-  override fun findEnvironmentById(id: EnvironmentId): Query<Environment?> {
-    return database.environmentQueries
-      .findById(id.value, ::mapToEnvironmentDomainModel)
-      .toPathFinderQuery { rows -> rows.firstOrNull() }
+  override suspend fun readEnvironmentById(id: EnvironmentId): Environment? {
+    return withContext(Dispatchers.IO) {
+      database.environmentQueries
+        .findById(id.value, ::mapToEnvironmentDomainModel)
+        .executeAsOneOrNull()
+    }
   }
 
-  override fun findUrlConfigurations(environmentId: EnvironmentId): Query<List<UrlConfiguration>> {
-    return combineLatest(
+  override fun urlConfigurations(environmentId: EnvironmentId): Flow<List<UrlConfiguration>> {
+    return combine(
       database.urlConfigurationQueries
-        .findByEnvironmentId(environmentId.value)
-        .toPathFinderQuery { it },
-      database.pathVariableQueries.findAll()
-        .toPathFinderQuery { it },
-      database.queryParameterQueries.findAll()
-        .toPathFinderQuery { it }
+        .findByEnvironmentId(environmentId.value).asFlow().map { it.executeAsList() },
+      database.pathVariableQueries.findAll().asFlow().map { it.executeAsList() },
+      database.queryParameterQueries.findAll().asFlow().map { it.executeAsList() },
     ) { configurations, pathVariables, queryParameters ->
       configurations.map { configuration ->
         UrlConfiguration(
@@ -125,30 +135,30 @@ class SqlDelightStore(context: Context) : Store {
           httpMethod = configuration.httpMethod.toDomainModel(),
           pathVariableValues = pathVariables
             .filter { it.urlConfigurationId == configuration.id }
-            .associateBy({ it.name }, { it.value }),
+            .associateBy({ it.name }, { it.value_ }),
           queryParameterValues = queryParameters
             .filter { it.urlConfigurationId == configuration.id }
-            .associateBy({ it.name }, { it.value }),
+            .associateBy({ it.name }, { it.value_ }),
         )
       }
     }
   }
 
-  override fun findUrlConfiguration(urlSpecId: UrlSpecId, environmentId: EnvironmentId): Query<UrlConfiguration?> {
-    return database.urlConfigurationQueries
-      .findByEnvironmentAndSpecId(environmentId.value, urlSpecId.value)
-      .toPathFinderQuery { it.firstOrNull() }
-      .map { configurationSM ->
-        if (configurationSM != null) {
-          val pathVariables = database.pathVariableQueries
-            .findByConfigurationId(configurationSM.id)
-            .executeAsList()
-          val queryParameters = database.queryParameterQueries
-            .findByConfigurationId(configurationSM.id)
-            .executeAsList()
-          configurationSM.toDomainModel(pathVariables, queryParameters)
-        } else null
-      }
+  override suspend fun readUrlConfiguration(urlSpecId: UrlSpecId, environmentId: EnvironmentId): UrlConfiguration? {
+    return withContext(Dispatchers.IO) {
+      val configurationSM = database.urlConfigurationQueries
+        .findByEnvironmentAndSpecId(environmentId.value, urlSpecId.value)
+        .executeAsOneOrNull()
+      if (configurationSM != null) {
+        val pathVariables = database.pathVariableQueries
+          .findByConfigurationId(configurationSM.id)
+          .executeAsList()
+        val queryParameters = database.queryParameterQueries
+          .findByConfigurationId(configurationSM.id)
+          .executeAsList()
+        configurationSM.toDomainModel(pathVariables, queryParameters)
+      } else null
+    }
   }
 
   override fun updatePathVariables(id: UrlConfiguration.Id, pathVariableValues: Map<String, String>) {
@@ -170,41 +180,4 @@ class SqlDelightStore(context: Context) : Store {
       )
     }
   }
-}
-
-internal class WrappedQuery<out RowType : Any, out ResultType>(
-  private val sqlDelightQuery: com.squareup.sqldelight.Query<RowType>,
-  private val mapper: (List<RowType>) -> ResultType,
-) : Query<ResultType> {
-
-  private val listeners = CopyOnWriteArrayList<SqlDelightListener>()
-
-  class SqlDelightListener(val pathFinderListener: Query.Listener) : com.squareup.sqldelight.Query.Listener {
-    override fun queryResultsChanged() {
-      pathFinderListener.queryResultsChanged()
-    }
-  }
-
-  override fun addListener(listener: Query.Listener) {
-    val l = SqlDelightListener(pathFinderListener = listener)
-    sqlDelightQuery.addListener(l)
-    listeners.add(l)
-  }
-
-  override fun removeListener(listener: Query.Listener) {
-    val l = listeners.find { it.pathFinderListener == listener }
-    if (l != null) {
-      sqlDelightQuery.removeListener(l)
-    }
-  }
-
-  override fun execute(): ResultType {
-    return mapper(sqlDelightQuery.executeAsList())
-  }
-}
-
-private fun <RowType : Any, ResultType> com.squareup.sqldelight.Query<RowType>.toPathFinderQuery(
-  mapper: (List<RowType>) -> ResultType,
-): Query<ResultType> {
-  return WrappedQuery(this, mapper)
 }

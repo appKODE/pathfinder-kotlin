@@ -1,4 +1,4 @@
-package ru.kode.pathfinder.android.ui.screen.urllist.entity
+package ru.kode.pathfinder.android.ui.compose.screen.urllist.entity
 
 data class PathVariableEditorProps(
   val variables: List<Variable>,

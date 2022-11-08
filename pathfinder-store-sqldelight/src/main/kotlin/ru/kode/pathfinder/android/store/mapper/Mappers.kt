@@ -61,8 +61,8 @@ internal fun FindByEnvironmentAndSpecId.toDomainModel(
     pathTemplate = pathTemplate,
     name = name,
     httpMethod = this.httpMethod.toDomainModel(),
-    pathVariableValues = pathVariables.associateBy({ it.name }, { it.value }),
-    queryParameterValues = queryParameters.associateBy({ it.name }, { it.value }),
+    pathVariableValues = pathVariables.associateBy({ it.name }, { it.value_ }),
+    queryParameterValues = queryParameters.associateBy({ it.name }, { it.value_ }),
   )
 }
 

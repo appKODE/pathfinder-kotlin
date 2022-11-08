@@ -1,8 +1,5 @@
 package ru.kode.pathfinder
 
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
-
 class DefaultResolver(
   private val store: Store,
   private val environmentId: EnvironmentId,
@@ -13,27 +10,23 @@ class DefaultResolver(
     pathVariables: Map<String, String>,
     queryParameters: Map<String, String>,
   ): String {
-    return withContext(Dispatchers.IO) {
-      val configuration = store.findUrlConfiguration(urlSpecId = id, environmentId = environmentId)
-        .execute()
-        // this resolver must be created only after initial population, if not → it is an error
-        ?: error("internal error: no url configuration for urlSpecId = ${id.value}")
+    val configuration = store.readUrlConfiguration(urlSpecId = id, environmentId = environmentId)
+      // this resolver must be created only after initial population, if not → it is an error
+      ?: error("internal error: no url configuration for urlSpecId = ${id.value}")
 
-      checkAllPathVariablesPresent(configuration, pathVariables)
+    checkAllPathVariablesPresent(configuration, pathVariables)
 
-      val environment = store.findEnvironmentById(environmentId)
-        .execute()
-        // this resolver must be created only after initial population, if not → it is an error
-        ?: error("internal error: no environment configuration for environmentId = ${environmentId.value}")
+    val environment = store.readEnvironmentById(environmentId)
+      // this resolver must be created only after initial population, if not → it is an error
+      ?: error("internal error: no environment configuration for environmentId = ${environmentId.value}")
 
-      buildUrl(
-        environment.baseUrl,
-        configuration.pathTemplate,
-        // values saved in store have higher precedence, so they are applied last: to override external ones
-        pathVariables.plus(configuration.pathVariableValues.filterValues { it.isNotBlank() }),
-        queryParameters.plus(configuration.queryParameterValues.filterValues { it.isNotBlank() }),
-      )
-    }
+    return buildUrl(
+      environment.baseUrl,
+      configuration.pathTemplate,
+      // values saved in store have higher precedence, so they are applied last: to override external ones
+      pathVariables.plus(configuration.pathVariableValues.filterValues { it.isNotBlank() }),
+      queryParameters.plus(configuration.queryParameterValues.filterValues { it.isNotBlank() }),
+    )
   }
 
   private fun buildUrl(
@@ -42,9 +35,9 @@ class DefaultResolver(
     pathVariables: Map<String, String>,
     queryParameters: Map<String, String>,
   ): String {
-    val path = "$baseUrl/" + pathVariables.entries.fold(pathTemplate, { template, (name, value) ->
+    val path = "$baseUrl/" + pathVariables.entries.fold(pathTemplate) { template, (name, value) ->
       template.replace("{$name}", value)
-    })
+    }
     val nonEmptyParams = queryParameters.filterValues { it.isNotBlank() }
     return if (nonEmptyParams.isNotEmpty()) {
       buildString {

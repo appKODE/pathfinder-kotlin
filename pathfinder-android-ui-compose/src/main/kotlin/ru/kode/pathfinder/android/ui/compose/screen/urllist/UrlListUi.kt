@@ -7,6 +7,8 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
@@ -30,7 +32,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
-import com.google.accompanist.insets.navigationBarsWithImePadding
 import ru.kode.pathfinder.Environment
 import ru.kode.pathfinder.EnvironmentId
 import ru.kode.pathfinder.UrlConfiguration
@@ -38,18 +39,16 @@ import ru.kode.pathfinder.android.ui.compose.R
 import ru.kode.pathfinder.android.ui.compose.base.BaseScreenUi
 import ru.kode.pathfinder.android.ui.compose.screen.urllist.component.PathVariableEditor
 import ru.kode.pathfinder.android.ui.compose.screen.urllist.component.UrlListItem
-import ru.kode.pathfinder.android.ui.screen.urllist.ViewIntents
-import ru.kode.pathfinder.android.ui.screen.urllist.ViewState
-import ru.kode.pathfinder.android.ui.screen.urllist.entity.PathVariableEditorProps
-import ru.kode.pathfinder.android.ui.screen.urllist.entity.QueryParameterEditorProps
+import ru.kode.pathfinder.android.ui.compose.screen.urllist.entity.PathVariableEditorProps
+import ru.kode.pathfinder.android.ui.compose.screen.urllist.entity.QueryParameterEditorProps
 
-internal class UrlListUi : BaseScreenUi<ViewState, ViewIntents>(ViewIntents()) {
+internal class UrlListUi : BaseScreenUi<ViewState, Intents>(Intents()) {
   @Composable
   override fun Content(viewState: ViewState) {
     val content = viewState.content ?: return
     ModalBottomSheetScaffold(contentState = content) {
       Column(
-        modifier = Modifier.navigationBarsWithImePadding(),
+        modifier = Modifier.navigationBarsPadding().imePadding(),
       ) {
         Spacer(modifier = Modifier.height(16.dp))
         ActiveEnvironmentHeader(content)
@@ -57,10 +56,10 @@ internal class UrlListUi : BaseScreenUi<ViewState, ViewIntents>(ViewIntents()) {
         Divider()
         UrlList(content.urls)
         if (content.showPathVariableEditor != null) {
-          PathVariableEditorDialog(props = content.showPathVariableEditor!!)
+          PathVariableEditorDialog(props = content.showPathVariableEditor)
         }
         if (content.showQueryParameterEditor != null) {
-          QueryParameterEditorDialog(props = content.showQueryParameterEditor!!)
+          QueryParameterEditorDialog(props = content.showQueryParameterEditor)
         }
       }
     }
@@ -186,7 +185,7 @@ internal class UrlListUi : BaseScreenUi<ViewState, ViewIntents>(ViewIntents()) {
   @Composable
   private fun ModalSheetContent(state: ViewState.Content) {
     if (state.showActiveEnvSelector != null) {
-      ActiveEnvSelector(state.showActiveEnvSelector!!, selectedEnvironmentId = state.activeEnvironment.id)
+      ActiveEnvSelector(state.showActiveEnvSelector, selectedEnvironmentId = state.activeEnvironment.id)
     } else {
       Spacer(modifier = Modifier.height(48.dp))
     }
@@ -195,7 +194,7 @@ internal class UrlListUi : BaseScreenUi<ViewState, ViewIntents>(ViewIntents()) {
   @Composable
   private fun ActiveEnvSelector(environments: List<Environment>, selectedEnvironmentId: EnvironmentId) {
     Column(
-      modifier = Modifier.navigationBarsWithImePadding()
+      modifier = Modifier.navigationBarsPadding().imePadding()
     ) {
       Text(
         modifier = Modifier.padding(horizontal = 16.dp, vertical = 16.dp),

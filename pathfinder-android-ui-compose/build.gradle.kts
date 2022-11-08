@@ -6,11 +6,11 @@ plugins {
 }
 
 android {
-  compileSdk = 31
+  compileSdk = 33
 
   defaultConfig {
     minSdk = 26
-    targetSdk = 31
+    targetSdk = 33
   }
 
   composeOptions {
@@ -24,10 +24,10 @@ android {
 
 dependencies {
   api(project(":pathfinder"))
-  implementation(project(":pathfinder-android-ui"))
 
   implementation(kotlin("stdlib-jdk8"))
   implementation(libs.bundles.compose)
+  implementation(libs.amviViewModel)
 }
 
 tasks.withType<KotlinCompile> {

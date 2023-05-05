@@ -10,7 +10,7 @@ buildscript {
 plugins {
   kotlin("jvm") version libs.versions.kotlin apply false
   kotlin("android") version libs.versions.kotlin apply false
-  id("com.android.library") version "7.3.1" apply false
+  id("com.android.library") version "7.4.2" apply false
 
   alias(libs.plugins.sqlDelight) apply false
   alias(libs.plugins.spotless)
@@ -31,14 +31,14 @@ spotless {
   kotlin {
     target("**/*.kt")
     targetExclude("!**/build/**/*.*")
-    ktlint(libs.versions.ktlint.get()).userData(mapOf("indent_size" to "2", "max_line_length" to "120"))
+    ktlint(libs.versions.ktlint.get()).editorConfigOverride(mapOf("indent_size" to "2", "max_line_length" to "120"))
     trimTrailingWhitespace()
     endWithNewline()
   }
 
   kotlinGradle {
     target("**/*.gradle.kts")
-    ktlint(libs.versions.ktlint.get()).userData(mapOf("indent_size" to "2", "max_line_length" to "120"))
+    ktlint(libs.versions.ktlint.get()).editorConfigOverride(mapOf("indent_size" to "2", "max_line_length" to "120"))
     trimTrailingWhitespace()
     endWithNewline()
   }

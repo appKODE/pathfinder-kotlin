@@ -9,9 +9,16 @@ dependencies {
   testImplementation(libs.bundles.koTest)
 }
 
+kotlin {
+  jvmToolchain {
+    languageVersion.set(JavaLanguageVersion.of(8))
+  }
+}
+
 tasks {
   compileKotlin {
     kotlinOptions.moduleName = "pathfinder"
+    kotlinOptions.jvmTarget = "1.8"
   }
 }
 

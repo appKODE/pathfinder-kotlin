@@ -36,9 +36,9 @@ spotless {
         mapOf(
           "indent_size" to "2",
           "max_line_length" to "120",
-          "ij_kotlin_allow_trailing_comma_on_call_site" to "true",
-
-        )
+          "ktlint_standard_trailing-comma-on-call-site" to "disabled",
+          "ktlint_standard_trailing-comma-on-declaration-site" to "disabled",
+        ),
       )
     trimTrailingWhitespace()
     endWithNewline()
@@ -51,9 +51,8 @@ spotless {
         mapOf(
           "indent_size" to "2",
           "max_line_length" to "120",
-          "ij_kotlin_allow_trailing_comma_on_call_site" to "true",
-
-          )
+          "ij_kotlin_allow_trailing_comma_on_declaration_site" to "true",
+        ),
       )
     trimTrailingWhitespace()
     endWithNewline()

@@ -157,7 +157,9 @@ class SqlDelightStore(context: Context) : Store {
           .findByConfigurationId(configurationSM.id)
           .executeAsList()
         configurationSM.toDomainModel(pathVariables, queryParameters)
-      } else null
+      } else {
+        null
+      }
     }
   }
 

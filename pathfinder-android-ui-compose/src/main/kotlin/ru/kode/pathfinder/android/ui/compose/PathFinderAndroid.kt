@@ -1,3 +1,5 @@
+@file:Suppress("ktlint:filename")
+
 package ru.kode.pathfinder.android.ui.compose
 
 import ru.kode.pathfinder.PathFinder

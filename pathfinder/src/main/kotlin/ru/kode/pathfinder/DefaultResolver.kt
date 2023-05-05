@@ -50,7 +50,9 @@ class DefaultResolver(
           append(value)
         }
       }
-    } else path
+    } else {
+      path
+    }
   }
 
   private fun checkAllPathVariablesPresent(configuration: UrlConfiguration, pathVariables: Map<String, String>) {

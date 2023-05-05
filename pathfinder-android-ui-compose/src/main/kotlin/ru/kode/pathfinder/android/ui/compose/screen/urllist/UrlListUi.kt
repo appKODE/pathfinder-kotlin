@@ -82,7 +82,7 @@ internal class UrlListUi : BaseScreenUi<ViewState, Intents>(Intents()) {
   private fun QueryParameterEditorDialog(props: QueryParameterEditorProps) {
     val editorState = remember { props.parameters.toMutableStateList() }
     Dialog(onDismissRequest = intents.dismissEditQueryParametersDialog) {
-      PathVariableEditor(
+      QueryParameterEditor(
         props = props.copy(parameters = editorState),
         onValueChange = { index, value -> editorState[index] = editorState[index].copy(value = value) },
         onConfirm = { intents.saveEditedQueryParameters(editorState); intents.dismissEditQueryParametersDialog() },
@@ -161,7 +161,8 @@ internal class UrlListUi : BaseScreenUi<ViewState, Intents>(Intents()) {
   ) {
     val sheetState = rememberModalBottomSheetState(
       initialValue = ModalBottomSheetValue.Hidden,
-      confirmStateChange = { sheetValue ->
+      skipHalfExpanded = true,
+      confirmValueChange = { sheetValue ->
         if (sheetValue == ModalBottomSheetValue.Hidden) {
           intents.dismissActiveEnvSelector()
         }
@@ -170,7 +171,7 @@ internal class UrlListUi : BaseScreenUi<ViewState, Intents>(Intents()) {
     )
     LaunchedEffect(contentState.showActiveEnvSelector) {
       if (contentState.showActiveEnvSelector != null) {
-        sheetState.animateTo(ModalBottomSheetValue.Expanded)
+        sheetState.show()
       } else {
         sheetState.hide()
       }

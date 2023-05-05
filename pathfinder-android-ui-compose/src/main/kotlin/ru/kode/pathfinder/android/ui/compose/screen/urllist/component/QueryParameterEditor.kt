@@ -22,7 +22,7 @@ import ru.kode.pathfinder.android.ui.compose.R
 import ru.kode.pathfinder.android.ui.compose.screen.urllist.entity.QueryParameterEditorProps
 
 @Composable
-internal fun PathVariableEditor(
+internal fun QueryParameterEditor(
   modifier: Modifier = Modifier,
   props: QueryParameterEditorProps,
   onValueChange: (index: Int, value: String) -> Unit,

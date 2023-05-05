@@ -13,7 +13,7 @@ androidExtensions = "1.4.0"
 androidXCore = "1.5.0"
 appCompat = "1.4.0"
 spotless = "6.18.0"
-amvi = "0.9.0"
+amvi = "0.9.1"
 
 [libraries]
 detekt-api = { module = "io.gitlab.arturbosch.detekt:detekt-api", version.ref = "detekt" }
@@ -37,6 +37,7 @@ activityCompose = { module = "androidx.activity:activity-compose", version.ref =
 androidXCoreKtx = { module = "androidx.core:core-ktx", version.ref = "androidXCore" }
 appCompat = { module = "androidx.appcompat:appcompat", version.ref = "appCompat" }
 amviViewModel = { module = "ru.kode:amvi-viewmodel", version.ref = "amvi" }
+amviCompose = { module = "ru.kode:amvi-component-compose", version.ref = "amvi" }
 
 [bundles]
 koTest = [ "kotest-junit-runner", "kotest-assertions-core", "kotest-property" ]

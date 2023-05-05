@@ -1,10 +1,9 @@
 package ru.kode.pathfinder.android.ui.compose.base
 
-import ru.kode.amvi.viewmodel.ViewIntents
-import ru.kode.amvi.viewmodel.ViewModel
-import ru.kode.pathfinder.Store
+import androidx.compose.runtime.Composable
 
-internal interface Screen<VS : Any, VI : ViewIntents> {
-  fun createViewModel(store: Store): ViewModel<VS, VI>
-  fun createUi(): BaseScreenUi<VS, VI>
+internal interface Screen {
+  @Composable
+  fun Content()
+  fun destroy()
 }

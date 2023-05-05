@@ -20,6 +20,16 @@ android {
   buildFeatures {
     compose = true
   }
+
+  buildTypes {
+    debug {
+      isDebuggable = true
+      isMinifyEnabled = false
+    }
+
+    release {
+    }
+  }
 }
 
 dependencies {

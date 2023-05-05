@@ -5,8 +5,6 @@ include("pathfinder-android-ui-compose")
 include("pathfinder-android-sample")
 include("pathfinder-store-sqldelight")
 
-enableFeaturePreview("VERSION_CATALOGS")
-
 pluginManagement {
   repositories {
     mavenCentral()

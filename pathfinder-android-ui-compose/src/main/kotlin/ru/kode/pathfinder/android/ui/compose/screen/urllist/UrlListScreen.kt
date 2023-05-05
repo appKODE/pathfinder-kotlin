@@ -1,18 +1,18 @@
 package ru.kode.pathfinder.android.ui.compose.screen.urllist
 
-import ru.kode.amvi.viewmodel.ViewModel
+import androidx.compose.runtime.Composable
 import ru.kode.pathfinder.Store
-import ru.kode.pathfinder.android.ui.compose.base.BaseScreenUi
 import ru.kode.pathfinder.android.ui.compose.base.Screen
 
-internal class UrlListScreen :
-  Screen<ViewState, Intents> {
+internal class UrlListScreen(store: Store) : Screen {
+  private val viewModel = UrlListViewModel(store)
 
-  override fun createViewModel(store: Store): ViewModel<ViewState, Intents> {
-    return UrlListViewModel(store)
+  @Composable
+  override fun Content() {
+    UrlListUi(viewModel)
   }
 
-  override fun createUi(): BaseScreenUi<ViewState, Intents> {
-    return UrlListUi()
+  override fun destroy() {
+    viewModel.destroy()
   }
 }

@@ -114,7 +114,6 @@ class MainActivity : ComponentActivity() {
 
   private fun createConfiguration(): Configuration {
     return Configuration(
-      version = 4,
       environments = listOf(
         Environment(
           id = EnvironmentId("mock"),

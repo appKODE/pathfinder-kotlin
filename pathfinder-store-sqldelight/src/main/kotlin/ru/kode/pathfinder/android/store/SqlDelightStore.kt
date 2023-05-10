@@ -42,21 +42,22 @@ class SqlDelightStore(context: Context) : Store {
   }
 
   override fun saveConfiguration(configuration: Configuration) {
-    val version = database.configurationQueries.findVersion().executeAsOneOrNull()?.version?.toInt()
-    check(version == null || configuration.version >= version) {
-      "cannot downgrade from $version to ${configuration.version}"
-    }
-    if (version == null || version < configuration.version) {
+    val version = database.configurationQueries.findVersion().executeAsOneOrNull()?.version
+    val newVersion = configuration.computeChecksum()
+    if (version == null || version != newVersion) {
       if (version != null) {
-        Log.d("pathfinder", "initializing configuration, moving from version $version to ${configuration.version}")
+        Log.d(
+          "pathfinder",
+          "initializing new configuration, replacing after change"
+        )
       } else {
-        Log.d("pathfinder", "initializing configuration, version = ${configuration.version}")
+        Log.d("pathfinder", "initializing new configuration")
       }
-      replaceConfiguration(configuration)
+      replaceConfiguration(configuration, newVersion)
     }
   }
 
-  private fun replaceConfiguration(configuration: Configuration) {
+  private fun replaceConfiguration(configuration: Configuration, newVersion: String) {
     database.transaction {
       val previousEnvironmentId = database.configurationQueries.findActiveEnvironment().executeAsOneOrNull()
       val activeEnvironmentId = configuration.environments.find { it.id.value == previousEnvironmentId }?.id
@@ -65,7 +66,7 @@ class SqlDelightStore(context: Context) : Store {
       database.environmentQueries.deleteAll()
 
       database.configurationQueries.upsertVersion(
-        version = configuration.version.toLong(),
+        version = newVersion,
         activeEnvironmentId = activeEnvironmentId.value
       )
       configuration.environments.forEach { environment ->

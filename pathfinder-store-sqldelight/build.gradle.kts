@@ -4,6 +4,7 @@ plugins {
   kotlin("android")
   id("com.android.library")
   id("com.squareup.sqldelight")
+  `maven-publish`
 }
 
 android {
@@ -11,7 +12,26 @@ android {
 
   defaultConfig {
     minSdk = 26
-    targetSdk = 33
+    aarMetadata {
+      minCompileSdk = 26
+    }
+  }
+
+  publishing {
+    singleVariant("release") {
+      withSourcesJar()
+      withJavadocJar()
+    }
+  }
+}
+
+publishing {
+  publications {
+    register<MavenPublication>("release") {
+      afterEvaluate {
+        from(components["release"])
+      }
+    }
   }
 }
 

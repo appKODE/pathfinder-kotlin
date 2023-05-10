@@ -14,6 +14,7 @@ androidXCore = "1.5.0"
 appCompat = "1.4.0"
 spotless = "6.18.0"
 amvi = "0.9.1"
+dokka = "1.5.31"
 
 [libraries]
 detekt-api = { module = "io.gitlab.arturbosch.detekt:detekt-api", version.ref = "detekt" }
@@ -47,3 +48,4 @@ compose = [ "composeUi", "composeMaterial", "composeMaterialIcons", "composeTool
 [plugins]
 sqlDelight = { id = "com.squareup.sqldelight", version.ref = "sqlDelight" }
 spotless = { id = "com.diffplug.spotless", version.ref = "spotless" }
+dokka = { id = "org.jetbrains.dokka", version.ref = "dokka" }

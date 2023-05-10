@@ -3,10 +3,18 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 plugins {
   kotlin("android")
   id("com.android.library")
+  `maven-publish`
 }
 
 android {
   compileSdk = 33
+
+  defaultConfig {
+    minSdk = 26
+    aarMetadata {
+      minCompileSdk = 26
+    }
+  }
 
   composeOptions {
     kotlinCompilerExtensionVersion = libs.versions.composeCompiler.get()
@@ -14,6 +22,23 @@ android {
 
   buildFeatures {
     compose = true
+  }
+
+  publishing {
+    singleVariant("release") {
+      withSourcesJar()
+      withJavadocJar()
+    }
+  }
+}
+
+publishing {
+  publications {
+    register<MavenPublication>("release") {
+      afterEvaluate {
+        from(components["release"])
+      }
+    }
   }
 }
 

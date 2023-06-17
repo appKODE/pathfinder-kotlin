@@ -41,19 +41,21 @@ class SqlDelightStore(context: Context) : Store {
     )
   }
 
-  override fun saveConfiguration(configuration: Configuration) {
-    val version = database.configurationQueries.findVersion().executeAsOneOrNull()?.version
-    val newVersion = configuration.computeChecksum()
-    if (version == null || version != newVersion) {
-      if (version != null) {
-        Log.d(
-          "pathfinder",
-          "initializing new configuration, replacing after change"
-        )
-      } else {
-        Log.d("pathfinder", "initializing new configuration")
+  override suspend fun saveConfiguration(configuration: Configuration) {
+    withContext(Dispatchers.IO) {
+      val version = database.configurationQueries.findVersion().executeAsOneOrNull()?.version
+      val newVersion = configuration.computeChecksum()
+      if (version == null || version != newVersion) {
+        if (version != null) {
+          Log.d(
+            "pathfinder",
+            "initializing new configuration, replacing after change"
+          )
+        } else {
+          Log.d("pathfinder", "initializing new configuration")
+        }
+        replaceConfiguration(configuration, newVersion)
       }
-      replaceConfiguration(configuration, newVersion)
     }
   }
 

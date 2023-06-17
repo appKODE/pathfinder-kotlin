@@ -3,7 +3,7 @@ package ru.kode.pathfinder
 import kotlinx.coroutines.flow.Flow
 
 interface Store {
-  fun saveConfiguration(configuration: Configuration)
+  suspend fun saveConfiguration(configuration: Configuration)
 
   fun changeActiveEnvironment(id: EnvironmentId)
   fun activeEnvironmentId(): Flow<EnvironmentId?>

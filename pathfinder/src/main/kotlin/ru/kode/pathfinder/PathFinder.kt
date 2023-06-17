@@ -13,11 +13,10 @@ class PathFinder private constructor(
 
   companion object {
     suspend fun create(store: Store, configuration: Configuration): PathFinder {
-      val pathFinder = PathFinder(store)
       withContext(Dispatchers.IO) {
         store.saveConfiguration(configuration)
       }
-      return pathFinder
+      return PathFinder(store)
     }
   }
 

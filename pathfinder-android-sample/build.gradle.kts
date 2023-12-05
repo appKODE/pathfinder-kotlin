@@ -1,12 +1,14 @@
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
-  kotlin("android")
+  alias(libs.plugins.kotlinAndroid)
   id("com.android.application")
 }
 
 android {
-  compileSdk = 33
+  compileSdk = 34
+
+  namespace = "ru.kode.pathfinder.sample.android"
 
   defaultConfig {
     minSdk = 26

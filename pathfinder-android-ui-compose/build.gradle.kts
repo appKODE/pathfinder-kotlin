@@ -1,13 +1,15 @@
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
-  kotlin("android")
+  alias(libs.plugins.kotlinAndroid)
   id("com.android.library")
   `maven-publish`
 }
 
 android {
-  compileSdk = 33
+  compileSdk = 34
+
+  namespace = "ru.kode.pathfinder.android.ui.compose"
 
   defaultConfig {
     minSdk = 26

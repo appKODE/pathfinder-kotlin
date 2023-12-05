@@ -9,11 +9,10 @@ buildscript {
 }
 
 plugins {
-  kotlin("jvm") version libs.versions.kotlin apply false
-  kotlin("android") version libs.versions.kotlin apply false
-  id("com.android.library") version "7.4.2" apply false
+  alias(libs.plugins.kotlinJvm) apply false
+  alias(libs.plugins.kotlinAndroid) apply false
+  id("com.android.library") version "8.1.0" apply false
 
-  alias(libs.plugins.sqlDelight) apply false
   alias(libs.plugins.dokka) apply false
   alias(libs.plugins.spotless)
 

@@ -1,14 +1,16 @@
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
-  kotlin("android")
+  alias(libs.plugins.kotlinAndroid)
   id("com.android.library")
-  id("com.squareup.sqldelight")
+  alias(libs.plugins.sqlDelight)
   `maven-publish`
 }
 
 android {
-  compileSdk = 33
+  compileSdk = 34
+
+  namespace = "ru.kode.pathfinder.android.store"
 
   defaultConfig {
     minSdk = 26
@@ -36,8 +38,10 @@ publishing {
 }
 
 sqldelight {
-  database("PathFinderDatabase") {
-    packageName = "ru.kode.pathfinder.android.store"
+  databases {
+    create("PathFinderDatabase") {
+      packageName.set("ru.kode.pathfinder.android.store")
+    }
   }
 }
 

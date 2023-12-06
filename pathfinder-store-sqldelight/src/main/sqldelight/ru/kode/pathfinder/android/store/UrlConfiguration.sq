@@ -4,7 +4,9 @@ CREATE TABLE UrlConfiguration (
   environmentId TEXT NOT NULL,
   pathTemplate TEXT NOT NULL,
   name TEXT NOT NULL,
-  httpMethod TEXT NOT NULL
+  httpMethod TEXT NOT NULL,
+  createdAt INTEGER NOT NULL DEFAULT 0,
+  updatedAt INTEGER NOT NULL DEFAULT 0
 );
 
 insertOne:
@@ -14,9 +16,11 @@ VALUES ?;
 findByEnvironmentId:
 SELECT id, specId, pathTemplate, name, httpMethod
 FROM UrlConfiguration
-WHERE UrlConfiguration.environmentId = ?;
+WHERE UrlConfiguration.environmentId = ?
+ORDER BY createdAt ASC;
 
 findByEnvironmentAndSpecId:
 SELECT id, specId, pathTemplate, name, httpMethod
 FROM UrlConfiguration
-WHERE UrlConfiguration.environmentId = ? AND UrlConfiguration.specId = ?;
+WHERE UrlConfiguration.environmentId = ? AND UrlConfiguration.specId = ?
+ORDER BY createdAt;

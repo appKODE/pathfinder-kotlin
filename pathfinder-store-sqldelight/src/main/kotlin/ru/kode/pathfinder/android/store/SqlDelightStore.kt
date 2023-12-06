@@ -59,6 +59,50 @@ class SqlDelightStore(context: Context) : Store {
     }
   }
 
+  override suspend fun replaceEnvironment(environment: Environment) {
+    withContext(Dispatchers.IO) {
+      database.transaction {
+        database.environmentQueries.insertOne(environment.toStorageModel())
+        val newVersion = recomputeVersionFromDB()
+        val activeEnvironmentId =
+          database.configurationQueries.findActiveEnvironment().executeAsOneOrNull()
+            ?: error("no active environment, has PathFinder been initialized?")
+        database.configurationQueries.upsertVersion(newVersion, activeEnvironmentId)
+      }
+    }
+  }
+
+  private fun recomputeVersionFromDB(): String {
+    return database.transactionWithResult {
+      val environments = database.environmentQueries
+        .findAll { id, name, baseUrl, queryParameters ->
+          Environment(
+            id = EnvironmentId(id),
+            name = name,
+            baseUrl = baseUrl,
+            queryParameters = queryParameters?.toSet()
+          )
+        }
+        .executeAsList()
+      val urlSpecs = database.urlConfigurationQueries
+        .findAll { pathTemplate, name, httpMethod ->
+          UrlSpec(pathTemplate = pathTemplate, httpMethod = httpMethod.toDomainModel(), name = name)
+        }
+        .executeAsList()
+
+      val activeEnvironmentId =
+        database.configurationQueries.findActiveEnvironment().executeAsOneOrNull()
+          ?: error("no active environment, has PathFinder been initialized?")
+
+      val configuration = Configuration(
+        environments = environments,
+        urlSpecs = urlSpecs,
+        defaultEnvironmentId = EnvironmentId(activeEnvironmentId)
+      )
+      configuration.computeChecksum()
+    }
+  }
+
   private fun replaceConfiguration(configuration: Configuration, newVersion: String) {
     database.transaction {
       val previousEnvironmentId =
@@ -132,6 +176,14 @@ class SqlDelightStore(context: Context) : Store {
       .findAll(::mapToEnvironmentDomainModel)
       .asFlow()
       .map { it.executeAsList() }
+  }
+
+  override suspend fun readEnvironments(): List<Environment> {
+    return withContext(Dispatchers.IO) {
+      database.environmentQueries
+        .findAll(::mapToEnvironmentDomainModel)
+        .executeAsList()
+    }
   }
 
   override suspend fun readEnvironmentById(id: EnvironmentId): Environment? {

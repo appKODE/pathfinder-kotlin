@@ -9,9 +9,12 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.Button
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
+import androidx.compose.material.TextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -22,6 +25,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -60,9 +64,16 @@ class MainActivity : ComponentActivity() {
             pathFinder = pathFinder!!,
             urlSpecId = configuration.urlSpecs[1].id,
             onConfigure = { showConfigurator = !showConfigurator },
+            onChangeBaseUrl = { changeBaseUrl(pathFinder!!, it) }
           )
         }
       }
+    }
+  }
+
+  private fun changeBaseUrl(pathFinder: PathFinder, baseUrl: String) {
+    pathFinder.updateEachEnvironment { env ->
+      env.copy(baseUrl = baseUrl)
     }
   }
 
@@ -75,11 +86,17 @@ class MainActivity : ComponentActivity() {
   }
 
   @Composable
-  private fun MainScreen(pathFinder: PathFinder, urlSpecId: UrlSpecId, onConfigure: () -> Unit) {
+  private fun MainScreen(
+    pathFinder: PathFinder,
+    urlSpecId: UrlSpecId,
+    onConfigure: () -> Unit,
+    onChangeBaseUrl: (String) -> Unit,
+  ) {
     Column(
       modifier = Modifier
         .background(color = Color(0x55ACC7E7))
         .fillMaxSize()
+        .verticalScroll(rememberScrollState())
         .padding(24.dp),
       horizontalAlignment = Alignment.CenterHorizontally,
     ) {
@@ -105,6 +122,17 @@ class MainActivity : ComponentActivity() {
       )
 
       Spacer(modifier = Modifier.height(64.dp))
+
+      var baseUrl by remember(currentEnvironment.baseUrl) {
+        mutableStateOf(TextFieldValue(currentEnvironment.baseUrl))
+      }
+      TextField(value = baseUrl, onValueChange = { baseUrl = it })
+
+      Button(onClick = { onChangeBaseUrl(baseUrl.text) }) {
+        Text("Change baseUrl")
+      }
+
+      Spacer(modifier = Modifier.height(32.dp))
 
       Button(onClick = onConfigure) {
         Text("Configure")

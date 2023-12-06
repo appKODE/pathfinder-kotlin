@@ -67,6 +67,25 @@ class PathFinder private constructor(
     }
   }
 
+  fun replaceEnvironment(environment: Environment) {
+    storeScope.launch {
+      store.replaceEnvironment(environment)
+    }
+  }
+
+  fun updateEachEnvironment(updater: (Environment) -> Environment) {
+    storeScope.launch {
+      store.readEnvironments().forEach {
+        val new = updater(it)
+        check(new.id == it.id) {
+          "environment id changed during an update operation. This is not allowed. " +
+            "Old id=${it.id}, new id=${new.id}"
+        }
+        store.replaceEnvironment(new)
+      }
+    }
+  }
+
   fun addListener(listener: Listener) {
     listeners.add(listener)
   }

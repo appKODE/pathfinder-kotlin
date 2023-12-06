@@ -13,6 +13,11 @@ insertOne:
 INSERT OR REPLACE INTO UrlConfiguration
 VALUES ?;
 
+findAll:
+SELECT pathTemplate, name, httpMethod
+FROM UrlConfiguration
+ORDER BY createdAt ASC;
+
 findByEnvironmentId:
 SELECT id, specId, pathTemplate, name, httpMethod
 FROM UrlConfiguration

@@ -15,7 +15,9 @@ internal fun Environment.toStorageModel(): EnvironmentStorageModel {
     id = this.id.value,
     name = this.name,
     baseUrl = this.baseUrl,
-    queryParameters = this.queryParameters?.toList()
+    queryParameters = this.queryParameters?.toList(),
+    createdAt = System.currentTimeMillis(),
+    updatedAt = System.currentTimeMillis(),
   )
 }
 
@@ -27,6 +29,8 @@ internal fun UrlSpec.toUrlConfigurationStorageModel(environmentId: EnvironmentId
     pathTemplate = this.pathTemplate,
     name = this.name,
     httpMethod = this.httpMethod.toStorageModel(),
+    createdAt = System.currentTimeMillis(),
+    updatedAt = System.currentTimeMillis(),
   )
 }
 

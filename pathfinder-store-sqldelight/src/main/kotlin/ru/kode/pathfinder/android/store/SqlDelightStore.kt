@@ -61,9 +61,11 @@ class SqlDelightStore(context: Context) : Store {
 
   private fun replaceConfiguration(configuration: Configuration, newVersion: String) {
     database.transaction {
-      val previousEnvironmentId = database.configurationQueries.findActiveEnvironment().executeAsOneOrNull()
-      val activeEnvironmentId = configuration.environments.find { it.id.value == previousEnvironmentId }?.id
-        ?: configuration.defaultEnvironmentId
+      val previousEnvironmentId =
+        database.configurationQueries.findActiveEnvironment().executeAsOneOrNull()
+      val activeEnvironmentId =
+        configuration.environments.find { it.id.value == previousEnvironmentId }?.id
+          ?: configuration.defaultEnvironmentId
 
       database.environmentQueries.deleteAll()
 
@@ -83,10 +85,26 @@ class SqlDelightStore(context: Context) : Store {
       val configuration = spec.toUrlConfigurationStorageModel(environment.id)
       database.urlConfigurationQueries.insertOne(configuration)
       environment.queryParameters?.forEach { name ->
-        database.queryParameterQueries.insertOne(QueryParameter(configuration.id, name, value_ = ""))
+        database.queryParameterQueries.insertOne(
+          QueryParameter(
+            configuration.id,
+            name,
+            value_ = "",
+            createdAt = System.currentTimeMillis(),
+            updatedAt = System.currentTimeMillis(),
+          )
+        )
       }
       spec.pathVariables.forEach { name ->
-        database.pathVariableQueries.insertOne(PathVariable(configuration.id, name, value_ = ""))
+        database.pathVariableQueries.insertOne(
+          PathVariable(
+            configuration.id,
+            name,
+            value_ = "",
+            createdAt = System.currentTimeMillis(),
+            updatedAt = System.currentTimeMillis(),
+          )
+        )
       }
     }
   }
@@ -104,7 +122,8 @@ class SqlDelightStore(context: Context) : Store {
 
   override suspend fun readActiveEnvironmentId(): EnvironmentId? {
     return withContext(Dispatchers.IO) {
-      database.configurationQueries.findActiveEnvironment().executeAsOneOrNull()?.let(::EnvironmentId)
+      database.configurationQueries.findActiveEnvironment().executeAsOneOrNull()
+        ?.let(::EnvironmentId)
     }
   }
 
@@ -147,7 +166,10 @@ class SqlDelightStore(context: Context) : Store {
     }
   }
 
-  override suspend fun readUrlConfiguration(urlSpecId: UrlSpecId, environmentId: EnvironmentId): UrlConfiguration? {
+  override suspend fun readUrlConfiguration(
+    urlSpecId: UrlSpecId,
+    environmentId: EnvironmentId
+  ): UrlConfiguration? {
     return withContext(Dispatchers.IO) {
       val configurationSM = database.urlConfigurationQueries
         .findByEnvironmentAndSpecId(environmentId.value, urlSpecId.value)
@@ -166,22 +188,30 @@ class SqlDelightStore(context: Context) : Store {
     }
   }
 
-  override fun updatePathVariables(id: UrlConfiguration.Id, pathVariableValues: Map<String, String>) {
+  override fun updatePathVariables(
+    id: UrlConfiguration.Id,
+    pathVariableValues: Map<String, String>
+  ) {
     pathVariableValues.entries.forEach { (name, value) ->
       database.pathVariableQueries.updateOne(
         name = name,
         value = value,
-        urlConfigurationId = id.value
+        urlConfigurationId = id.value,
+        updatedAt = System.currentTimeMillis(),
       )
     }
   }
 
-  override fun updateQueryParameters(id: UrlConfiguration.Id, queryParameterValues: Map<String, String>) {
+  override fun updateQueryParameters(
+    id: UrlConfiguration.Id,
+    queryParameterValues: Map<String, String>
+  ) {
     queryParameterValues.entries.forEach { (name, value) ->
       database.queryParameterQueries.updateOne(
         name = name,
         value = value,
-        urlConfigurationId = id.value
+        urlConfigurationId = id.value,
+        updatedAt = System.currentTimeMillis(),
       )
     }
   }

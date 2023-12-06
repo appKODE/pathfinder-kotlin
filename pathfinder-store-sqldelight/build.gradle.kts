@@ -41,6 +41,7 @@ sqldelight {
   databases {
     create("PathFinderDatabase") {
       packageName.set("ru.kode.pathfinder.android.store")
+      schemaOutputDirectory.set(file("src/main/sqldelight/databases"))
     }
   }
 }

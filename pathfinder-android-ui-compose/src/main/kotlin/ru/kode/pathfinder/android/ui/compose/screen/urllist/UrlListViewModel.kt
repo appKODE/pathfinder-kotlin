@@ -16,7 +16,7 @@ class UrlListViewModel(
   override fun buildMachine() = machine<ViewState> {
     initial = ViewState() to null
 
-    onEach(store.findEnvironments()) {
+    onEach(store.environments()) {
       transitionTo { state, environments ->
         state.copy(
           content = ViewState.Content(
@@ -28,7 +28,7 @@ class UrlListViewModel(
     }
 
     onEach(
-      intent(Intents::changeEnvironment).flatMapLatest { store.findEnvironments() }
+      intent(Intents::changeEnvironment).flatMapLatest { store.environments() }
     ) {
       transitionTo { state, environments ->
         state.updateContent { content ->

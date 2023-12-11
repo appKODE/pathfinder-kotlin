@@ -171,7 +171,7 @@ class SqlDelightStore(context: Context) : Store {
     }
   }
 
-  override fun findEnvironments(): Flow<List<Environment>> {
+  override fun environments(): Flow<List<Environment>> {
     return database.environmentQueries
       .findAll(::mapToEnvironmentDomainModel)
       .asFlow()

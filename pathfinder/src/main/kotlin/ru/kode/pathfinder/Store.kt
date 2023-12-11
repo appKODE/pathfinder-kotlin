@@ -11,7 +11,7 @@ interface Store {
   fun activeEnvironmentId(): Flow<EnvironmentId?>
   suspend fun readActiveEnvironmentId(): EnvironmentId?
 
-  fun findEnvironments(): Flow<List<Environment>>
+  fun environments(): Flow<List<Environment>>
   suspend fun readEnvironmentById(id: EnvironmentId): Environment?
   suspend fun readEnvironments(): List<Environment>
 

@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.11.0 - 2024-06-05
+* Update dependencies
+
 ## 0.10.0 - 2023-12-11
 * Add the ability to replace/update environment properties dynamically
 

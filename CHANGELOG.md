@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.11.1 - 2024-07-03
+* Add "pathfinder_" prefix to all string resources. This should fix conflicts with common names like "action_cancel" which client application could also have.
+
 ## 0.11.0 - 2024-06-05
 * Update dependencies
 

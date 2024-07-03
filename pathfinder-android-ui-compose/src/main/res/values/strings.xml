@@ -1,16 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-  <string name="url_list_current_env">Active Environment</string>
-  <string name="url_list_current_env_change">Change</string>
+  <string name="pathfinder_url_list_current_env">Active Environment</string>
+  <string name="pathfinder_url_list_current_env_change">Change</string>
 
-  <string name="select_environment_title">Change environment</string>
-  <string name="url_path_variables">Path variables:</string>
-  <string name="url_query_parameters">Query parameters:</string>
-  <string name="no_values">Not defined</string>
-  <string name="action_add">Add</string>
-  <string name="action_edit">Edit</string>
-  <string name="action_save">Save</string>
-  <string name="action_cancel">Cancel</string>
-  <string name="edit_path_variables_dialog_title">Edit variables</string>
-  <string name="edit_query_parameters_dialog_title">Edit parameters</string>
+  <string name="pathfinder_select_environment_title">Change environment</string>
+  <string name="pathfinder_url_path_variables">Path variables:</string>
+  <string name="pathfinder_url_query_parameters">Query parameters:</string>
+  <string name="pathfinder_no_values">Not defined</string>
+  <string name="pathfinder_action_add">Add</string>
+  <string name="pathfinder_action_edit">Edit</string>
+  <string name="pathfinder_action_save">Save</string>
+  <string name="pathfinder_action_cancel">Cancel</string>
+  <string name="pathfinder_edit_path_variables_dialog_title">Edit variables</string>
+  <string name="pathfinder_edit_query_parameters_dialog_title">Edit parameters</string>
 </resources>

@@ -83,14 +83,14 @@ private fun Details(
         modifier = Modifier,
         style = MaterialTheme.typography.body1,
         color = MaterialTheme.colors.onSurface.copy(alpha = ContentAlpha.medium),
-        text = stringResource(id = R.string.url_path_variables),
+        text = stringResource(id = R.string.pathfinder_url_path_variables),
       )
       Column {
         if (pathVariables.all { it.value.isEmpty() }) {
           Text(
             modifier = Modifier.padding(start = 16.dp),
             style = MaterialTheme.typography.body1,
-            text = stringResource(id = R.string.no_values),
+            text = stringResource(id = R.string.pathfinder_no_values),
           )
         } else {
           Text(
@@ -106,7 +106,7 @@ private fun Details(
           colors = ButtonDefaults.textButtonColors(),
           elevation = ButtonDefaults.elevation(0.dp, 0.dp, 0.dp)
         ) {
-          Text(text = stringResource(id = R.string.action_edit))
+          Text(text = stringResource(id = R.string.pathfinder_action_edit))
         }
       }
     }
@@ -115,14 +115,14 @@ private fun Details(
         modifier = Modifier,
         style = MaterialTheme.typography.body1,
         color = MaterialTheme.colors.onSurface.copy(alpha = ContentAlpha.medium),
-        text = stringResource(id = R.string.url_query_parameters),
+        text = stringResource(id = R.string.pathfinder_url_query_parameters),
       )
       Column {
         if (queryParameters.all { it.value.isEmpty() }) {
           Text(
             modifier = Modifier.padding(start = 16.dp),
             style = MaterialTheme.typography.body1,
-            text = stringResource(id = R.string.no_values),
+            text = stringResource(id = R.string.pathfinder_no_values),
           )
         } else {
           Text(
@@ -138,7 +138,7 @@ private fun Details(
           colors = ButtonDefaults.textButtonColors(),
           elevation = ButtonDefaults.elevation(0.dp, 0.dp, 0.dp)
         ) {
-          Text(text = stringResource(id = R.string.action_edit))
+          Text(text = stringResource(id = R.string.pathfinder_action_edit))
         }
       }
     }

@@ -108,7 +108,7 @@ private fun ActiveEnvironmentHeader(state: ViewState.Content, intents: Intents) 
     Text(
       modifier = Modifier.padding(horizontal = 24.dp),
       style = MaterialTheme.typography.subtitle1,
-      text = stringResource(id = R.string.url_list_current_env),
+      text = stringResource(id = R.string.pathfinder_url_list_current_env),
     )
     Row(
       modifier = Modifier
@@ -126,7 +126,7 @@ private fun ActiveEnvironmentHeader(state: ViewState.Content, intents: Intents) 
         Text(
           modifier = Modifier,
           style = MaterialTheme.typography.button,
-          text = stringResource(id = R.string.url_list_current_env_change),
+          text = stringResource(id = R.string.pathfinder_url_list_current_env_change),
         )
       }
     }
@@ -220,7 +220,7 @@ private fun ActiveEnvSelector(
     Text(
       modifier = Modifier.padding(horizontal = 16.dp, vertical = 16.dp),
       style = MaterialTheme.typography.h6,
-      text = stringResource(id = R.string.select_environment_title),
+      text = stringResource(id = R.string.pathfinder_select_environment_title),
     )
     environments.forEach { item ->
       Row(

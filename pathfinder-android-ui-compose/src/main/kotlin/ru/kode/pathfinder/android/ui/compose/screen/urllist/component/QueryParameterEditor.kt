@@ -36,7 +36,7 @@ internal fun QueryParameterEditor(
       .padding(24.dp),
   ) {
     Text(
-      text = stringResource(id = R.string.edit_query_parameters_dialog_title),
+      text = stringResource(id = R.string.pathfinder_edit_query_parameters_dialog_title),
       style = MaterialTheme.typography.h6
     )
     Spacer(modifier = Modifier.height(24.dp))
@@ -47,11 +47,11 @@ internal fun QueryParameterEditor(
     Spacer(modifier = Modifier.height(24.dp))
     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
       TextButton(onClick = onDismiss) {
-        Text(text = stringResource(id = R.string.action_cancel))
+        Text(text = stringResource(id = R.string.pathfinder_action_cancel))
       }
       Spacer(modifier = Modifier.width(16.dp))
       TextButton(onClick = onConfirm) {
-        Text(text = stringResource(id = R.string.action_save))
+        Text(text = stringResource(id = R.string.pathfinder_action_save))
       }
     }
   }

@@ -116,12 +116,13 @@ class UrlListUiTest {
     assertEquals(prod.id, runBlocking { store.readActiveEnvironmentId() })
   }
 
-  // the view model runs on Dispatchers.Default which compose test idling does not track
-  private fun waitForText(text: String) = composeRule.waitUntil(5_000) {
+  // the view model runs on Dispatchers.Default which compose test idling does not track;
+  // generous timeout for the cold Robolectric start on CI, the wait returns as soon as the condition holds
+  private fun waitForText(text: String) = composeRule.waitUntil(30_000) {
     composeRule.onAllNodesWithText(text).fetchSemanticsNodes().isNotEmpty()
   }
 
-  private fun waitForNoText(text: String) = composeRule.waitUntil(5_000) {
+  private fun waitForNoText(text: String) = composeRule.waitUntil(30_000) {
     composeRule.onAllNodesWithText(text).fetchSemanticsNodes().isEmpty()
   }
 }

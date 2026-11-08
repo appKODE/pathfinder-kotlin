@@ -2,6 +2,7 @@ package ru.kode.pathfinder.sample.android
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
@@ -58,6 +59,7 @@ class MainActivity : ComponentActivity() {
       val controller = remember(pathFinder) {
         pathFinder?.createConfigurationPanelController()
       }
+      BackHandler(enabled = showConfigurator) { showConfigurator = false }
       if (showConfigurator) {
         controller?.Content()
       } else {
@@ -65,6 +67,7 @@ class MainActivity : ComponentActivity() {
           MainScreen(
             pathFinder = pathFinder!!,
             urlSpecId = configuration.urlSpecs[1].id,
+            authUrlSpecId = configuration.urlSpecs[0].id,
             onConfigure = { showConfigurator = !showConfigurator },
             onChangeBaseUrl = { changeBaseUrl(pathFinder!!, it) }
           )
@@ -81,18 +84,11 @@ class MainActivity : ComponentActivity() {
     }
   }
 
-  override fun onBackPressed() {
-    if (showConfigurator) {
-      showConfigurator = false
-    } else {
-      super.onBackPressed()
-    }
-  }
-
   @Composable
   private fun MainScreen(
     pathFinder: PathFinder,
     urlSpecId: UrlSpecId,
+    authUrlSpecId: UrlSpecId,
     onConfigure: () -> Unit,
     onChangeBaseUrl: (String) -> Unit,
   ) {
@@ -124,6 +120,15 @@ class MainActivity : ComponentActivity() {
         text = url,
         fontSize = 20.sp,
       )
+      Spacer(modifier = Modifier.height(32.dp))
+      Text(text = "URL with a named base url", style = MaterialTheme.typography.h6)
+      val authUrl by produceState(initialValue = "", currentEnvironment, showConfigurator) {
+        value = pathFinder.buildUrl(authUrlSpecId)
+      }
+      Text(
+        text = authUrl,
+        fontSize = 20.sp,
+      )
 
       Spacer(modifier = Modifier.height(64.dp))
 
@@ -151,12 +156,14 @@ class MainActivity : ComponentActivity() {
         name = "Mock",
         baseUrl = "https://mock.project.ru/v1",
         queryParameters = setOf("__example", "__code"),
+        additionalBaseUrls = mapOf("auth" to "https://auth.mock.project.ru"),
       ),
       Environment(
         id = EnvironmentId("prod"),
         name = "Production",
         baseUrl = "https://api.project.ru/v1",
         queryParameters = null,
+        additionalBaseUrls = mapOf("auth" to "https://auth.project.ru"),
       ),
     ),
     urlSpecs = listOf(
@@ -164,6 +171,7 @@ class MainActivity : ComponentActivity() {
         pathTemplate = "auth/login",
         UrlSpec.HttpMethod.POST,
         name = "Perform login",
+        baseUrlKey = "auth",
       ),
       UrlSpec(
         pathTemplate = "{categoryId}/users/{userId}",

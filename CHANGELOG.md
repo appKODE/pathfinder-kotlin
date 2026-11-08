@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.12.0 - unreleased
+## 0.12.0 - 2026-11-08
 * `PathFinder.create` returns a ready instance: `buildUrl` works right after it returns
 * `currentEnvironment` and listeners follow changes of the active environment (e.g. its `baseUrl`), not only switches
 * Add `updateEnvironment(id, updater)` and `saveConfiguration(configuration)` to `PathFinder`

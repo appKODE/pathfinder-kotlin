@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+* Debug panel: the url list could open empty or show a stale environment, because the environment and
+  its urls were collected by separate flows racing each other
+
 ## 0.13.0 - 2026-11-08
 * Kotlin Multiplatform: `pathfinder` and `pathfinder-store-sqldelight` target Android, JVM, iosArm64,
   iosSimulatorArm64, iosX64. Coordinates are unchanged, Gradle resolves the platform artifact.

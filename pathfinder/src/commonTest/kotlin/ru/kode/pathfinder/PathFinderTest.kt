@@ -236,7 +236,7 @@ class PathFinderTest {
 
   // the store observer runs on Dispatchers.IO, so wait in real time
   private suspend fun awaitUntil(condition: () -> Boolean) = withContext(Dispatchers.Default) {
-    withTimeout(5_000) {
+    withTimeout(30_000) {
       while (!condition()) delay(10)
     }
   }

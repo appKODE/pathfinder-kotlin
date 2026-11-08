@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.13.0 - unreleased
+## 0.13.0 - 2026-11-08
 * Kotlin Multiplatform: `pathfinder` and `pathfinder-store-sqldelight` target Android, JVM, iosArm64,
   iosSimulatorArm64, iosX64. Coordinates are unchanged, Gradle resolves the platform artifact.
   `pathfinder-android-ui-compose` stays Android-only

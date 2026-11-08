@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.13.0 - unreleased
+* Kotlin Multiplatform: `pathfinder` and `pathfinder-store-sqldelight` target Android, JVM, iosArm64,
+  iosSimulatorArm64, iosX64. Coordinates are unchanged, Gradle resolves the platform artifact.
+  `pathfinder-android-ui-compose` stays Android-only
+* `SqlDelightStore(driver: SqlDriver)` is public: pass any SQLDelight driver created with `PathFinderDatabase.Schema`
+* iOS: `SqlDelightStore()` creates a store backed by `NativeSqliteDriver` (`pathfinder.db`)
+* Configuration checksums are unchanged, stored environments and overrides survive the upgrade
+
+### Breaking changes
+* Android: `SqlDelightStore(context)` is a top-level function instead of a constructor.
+  Kotlin sources compile unchanged, Java callers use `SqlDelightStoreFactoryKt.SqlDelightStore(context)`
+* `pathfinder` is published as an Android AAR (`pathfinder-android`) / JVM jar (`pathfinder-jvm`) instead of one jar
+
 ## 0.12.0 - 2026-11-08
 * `PathFinder.create` returns a ready instance: `buildUrl` works right after it returns
 * `currentEnvironment` and listeners follow changes of the active environment (e.g. its `baseUrl`), not only switches

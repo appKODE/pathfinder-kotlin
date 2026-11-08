@@ -1,8 +1,6 @@
-import com.vanniktech.maven.publish.JavadocJar
-import com.vanniktech.maven.publish.KotlinJvm
-
 plugins {
-  alias(libs.plugins.kotlinJvm)
+  alias(libs.plugins.kotlinMultiplatform)
+  alias(libs.plugins.androidKmpLibrary)
   alias(libs.plugins.vanniktech.maven.publish)
   alias(libs.plugins.kover)
 }
@@ -13,14 +11,35 @@ version = providers.gradleProperty("versionName").get()
 kotlin {
   jvmToolchain(17)
 
-  compilerOptions {
-    moduleName.set("pathfinder")
+  jvm {
+    compilerOptions {
+      moduleName.set("pathfinder")
+    }
+  }
+
+  androidLibrary {
+    namespace = "ru.kode.pathfinder"
+    compileSdk = libs.versions.compileSdk.get().toInt()
+    minSdk = 21
+  }
+
+  iosArm64()
+  iosSimulatorArm64()
+  iosX64()
+
+  sourceSets {
+    commonMain.dependencies {
+      api(libs.bundles.coroutines)
+    }
+    commonTest.dependencies {
+      implementation(kotlin("test"))
+      implementation(libs.coroutines.test)
+    }
   }
 }
 
 mavenPublishing {
   coordinates(artifactId = "pathfinder")
-  configure(KotlinJvm(javadocJar = JavadocJar.Empty()))
 
   publishToMavenCentral()
   signAllPublications()
@@ -63,11 +82,4 @@ mavenPublishing {
       }
     }
   }
-}
-
-dependencies {
-  api(libs.bundles.coroutines)
-
-  testImplementation(kotlin("test-junit5"))
-  testImplementation(libs.coroutines.test)
 }

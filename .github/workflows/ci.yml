@@ -46,6 +46,7 @@ jobs:
       - name: Run tests and assemble validations
         run: |
           ./gradlew --no-daemon --stacktrace \
+            jvmTest \
             test \
             koverVerify \
             :pathfinder-store-sqldelight:assembleDebug \

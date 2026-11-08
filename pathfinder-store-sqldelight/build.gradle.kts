@@ -1,8 +1,6 @@
-import com.vanniktech.maven.publish.AndroidSingleVariantLibrary
-import com.vanniktech.maven.publish.JavadocJar
-
 plugins {
-  alias(libs.plugins.androidLibrary)
+  alias(libs.plugins.kotlinMultiplatform)
+  alias(libs.plugins.androidKmpLibrary)
   alias(libs.plugins.sqlDelight)
   alias(libs.plugins.vanniktech.maven.publish)
   alias(libs.plugins.kover)
@@ -11,29 +9,43 @@ plugins {
 group = providers.gradleProperty("pomGroupId").get()
 version = providers.gradleProperty("versionName").get()
 
-android {
-  compileSdk = libs.versions.compileSdk.get().toInt()
-
-  namespace = "ru.kode.pathfinder.android.store"
-
-  defaultConfig {
-    minSdk = 26
-    aarMetadata {
-      minCompileSdk = 26
-    }
-  }
-
-  testOptions {
-    // android.util.Log is a no-op in JVM tests
-    unitTests.isReturnDefaultValues = true
-  }
-}
-
 kotlin {
   jvmToolchain(17)
 
-  compilerOptions {
-    moduleName.set("pathfinder-store-sqldelight")
+  jvm {
+    compilerOptions {
+      moduleName.set("pathfinder-store-sqldelight")
+    }
+  }
+
+  androidLibrary {
+    namespace = "ru.kode.pathfinder.android.store"
+    compileSdk = libs.versions.compileSdk.get().toInt()
+    minSdk = 26
+  }
+
+  iosArm64()
+  iosSimulatorArm64()
+  iosX64()
+
+  sourceSets {
+    commonMain.dependencies {
+      api(project(":pathfinder"))
+      // was exposed by the SQLDelight 2.0 plugin in 0.11.x, consumers rely on it
+      api(libs.sqlDelightRuntime)
+      implementation(libs.sqlDelightCoroutines)
+    }
+    androidMain.dependencies {
+      implementation(libs.sqlDelightAndroidDriver)
+    }
+    iosMain.dependencies {
+      implementation(libs.sqlDelightNativeDriver)
+    }
+    jvmTest.dependencies {
+      implementation(kotlin("test-junit5"))
+      implementation(libs.coroutines.test)
+      implementation(libs.sqlDelightJvmDriver)
+    }
   }
 }
 
@@ -41,14 +53,13 @@ sqldelight {
   databases {
     create("PathFinderDatabase") {
       packageName.set("ru.kode.pathfinder.android.store")
-      schemaOutputDirectory.set(file("src/main/sqldelight/databases"))
+      schemaOutputDirectory.set(file("src/commonMain/sqldelight/databases"))
     }
   }
 }
 
 mavenPublishing {
   coordinates(artifactId = "pathfinder-store-sqldelight")
-  configure(AndroidSingleVariantLibrary(javadocJar = JavadocJar.Empty()))
 
   publishToMavenCentral()
   signAllPublications()
@@ -91,17 +102,4 @@ mavenPublishing {
       }
     }
   }
-}
-
-dependencies {
-  api(project(":pathfinder"))
-  // was exposed by the SQLDelight 2.0 plugin in 0.11.x, consumers rely on it
-  api(libs.sqlDelightRuntime)
-
-  implementation(libs.sqlDelightAndroidDriver)
-  implementation(libs.sqlDelightCoroutines)
-
-  testImplementation(kotlin("test-junit5"))
-  testImplementation(libs.coroutines.test)
-  testImplementation(libs.sqlDelightJvmDriver)
 }

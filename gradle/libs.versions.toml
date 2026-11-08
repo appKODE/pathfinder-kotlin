@@ -40,6 +40,7 @@ composeUiTestManifest = { module = "androidx.compose.ui:ui-test-manifest", versi
 robolectric = { module = "org.robolectric:robolectric", version.ref = "robolectric" }
 junit4 = { module = "junit:junit", version.ref = "junit4" }
 junitVintageEngine = { module = "org.junit.vintage:junit-vintage-engine", version.ref = "junitVintage" }
+junitPlatformLauncher = { module = "org.junit.platform:junit-platform-launcher", version = "1.14.4" }
 
 [bundles]
 coroutines = [ "coroutines-core" ]

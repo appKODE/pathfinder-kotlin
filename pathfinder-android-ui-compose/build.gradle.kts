@@ -106,4 +106,5 @@ dependencies {
   debugImplementation(libs.composeUiTestManifest)
   // Robolectric and Compose tests are JUnit4, the root project runs tests on the JUnit Platform
   testRuntimeOnly(libs.junitVintageEngine)
+  testRuntimeOnly(libs.junitPlatformLauncher)
 }

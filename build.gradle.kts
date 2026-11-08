@@ -36,6 +36,8 @@ kover {
           "ru.kode.pathfinder.android.store.UrlConfiguration",
           "ru.kode.pathfinder.android.store.Find*",
         )
+        // lambdas of the @Preview functions, which annotatedBy does not reach
+        classes("ru.kode.pathfinder.android.ui.compose.screen.urllist.component.ComposableSingletons\$UrlListItemKt*")
         annotatedBy("androidx.compose.ui.tooling.preview.Preview")
       }
     }

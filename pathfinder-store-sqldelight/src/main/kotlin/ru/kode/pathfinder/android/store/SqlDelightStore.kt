@@ -17,6 +17,7 @@ import ru.kode.pathfinder.UrlConfiguration
 import ru.kode.pathfinder.UrlSpec
 import ru.kode.pathfinder.UrlSpecId
 import ru.kode.pathfinder.android.store.adapter.StringListColumnAdapter
+import ru.kode.pathfinder.android.store.adapter.StringMapColumnAdapter
 import ru.kode.pathfinder.android.store.mapper.mapToEnvironmentDomainModel
 import ru.kode.pathfinder.android.store.mapper.toDomainModel
 import ru.kode.pathfinder.android.store.mapper.toStorageModel
@@ -36,8 +37,9 @@ class SqlDelightStore(context: Context) : Store {
     return PathFinderDatabase(
       driver,
       EnvironmentAdapter = EnvironmentStorageModel.Adapter(
-        queryParametersAdapter = StringListColumnAdapter(separator = ":::")
-      )
+        queryParametersAdapter = StringListColumnAdapter(separator = ":::"),
+        additionalBaseUrlsAdapter = StringMapColumnAdapter(),
+      ),
     )
   }
 
@@ -68,8 +70,13 @@ class SqlDelightStore(context: Context) : Store {
         database.environmentQueries.insertOne(environment.toStorageModel())
         if (isNew) {
           val urlSpecs = database.urlConfigurationQueries
-            .findAllSpecs { pathTemplate, name, httpMethod ->
-              UrlSpec(pathTemplate = pathTemplate, httpMethod = httpMethod.toDomainModel(), name = name)
+            .findAllSpecs { pathTemplate, name, httpMethod, baseUrlKey ->
+              UrlSpec(
+                pathTemplate = pathTemplate,
+                httpMethod = httpMethod.toDomainModel(),
+                name = name,
+                baseUrlKey = baseUrlKey,
+              )
             }
             .executeAsList()
           saveInitialUrlConfigurations(environment, urlSpecs)
@@ -179,6 +186,7 @@ class SqlDelightStore(context: Context) : Store {
         queryParameterValues = queryParameters
           .filter { it.urlConfigurationId == configuration.id }
           .associateBy({ it.name }, { it.value_ }),
+        baseUrlKey = configuration.baseUrlKey,
       )
     }
   }

@@ -5,6 +5,10 @@ data class Environment(
   val name: String,
   val baseUrl: String,
   val queryParameters: Set<String>? = null,
+  /**
+   * Named base urls in addition to [baseUrl]. An [UrlSpec] with [UrlSpec.baseUrlKey] uses one of them.
+   */
+  val additionalBaseUrls: Map<String, String> = emptyMap(),
 )
 
 @JvmInline

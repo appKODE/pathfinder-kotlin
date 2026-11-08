@@ -15,6 +15,7 @@ internal fun Environment.toStorageModel(): EnvironmentStorageModel = Environment
   name = this.name,
   baseUrl = this.baseUrl,
   queryParameters = this.queryParameters?.toList(),
+  additionalBaseUrls = this.additionalBaseUrls.takeIf { it.isNotEmpty() },
   createdAt = System.currentTimeMillis(),
   updatedAt = System.currentTimeMillis(),
 )
@@ -28,6 +29,7 @@ internal fun UrlSpec.toUrlConfigurationStorageModel(environmentId: EnvironmentId
   httpMethod = this.httpMethod.toStorageModel(),
   createdAt = System.currentTimeMillis(),
   updatedAt = System.currentTimeMillis(),
+  baseUrlKey = this.baseUrlKey,
 )
 
 private fun UrlSpec.createStorageId(environmentId: EnvironmentId): String = buildString {
@@ -41,11 +43,13 @@ internal fun mapToEnvironmentDomainModel(
   name: String,
   baseUrl: String,
   queryParameters: List<String>?,
+  additionalBaseUrls: Map<String, String>?,
 ): Environment = Environment(
   id = EnvironmentId(id),
   name = name,
   baseUrl = baseUrl,
-  queryParameters = queryParameters?.toSet()
+  queryParameters = queryParameters?.toSet(),
+  additionalBaseUrls = additionalBaseUrls.orEmpty(),
 )
 
 internal fun FindByEnvironmentAndSpecId.toDomainModel(
@@ -58,6 +62,7 @@ internal fun FindByEnvironmentAndSpecId.toDomainModel(
   httpMethod = this.httpMethod.toDomainModel(),
   pathVariableValues = pathVariables.associateBy({ it.name }, { it.value_ }),
   queryParameterValues = queryParameters.associateBy({ it.name }, { it.value_ }),
+  baseUrlKey = baseUrlKey,
 )
 
 internal fun UrlSpec.HttpMethod.toStorageModel(): String = when (this) {

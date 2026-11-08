@@ -16,6 +16,11 @@ data class UrlSpec(
 
   val httpMethod: HttpMethod,
   val name: String,
+  /**
+   * A key in [Environment.additionalBaseUrls] to use instead of [Environment.baseUrl].
+   * `null` means [Environment.baseUrl].
+   */
+  val baseUrlKey: String? = null,
 ) {
 
   /**

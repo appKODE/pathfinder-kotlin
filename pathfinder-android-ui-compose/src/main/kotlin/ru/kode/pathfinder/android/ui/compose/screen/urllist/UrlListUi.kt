@@ -58,7 +58,7 @@ internal fun UrlListUi(viewModel: UrlListViewModel) {
         ActiveEnvironmentHeader(content, intents)
         Spacer(modifier = Modifier.height(16.dp))
         Divider()
-        UrlList(content.urls, intents)
+        UrlList(content.urls, content.activeEnvironment.additionalBaseUrls, intents)
         if (content.showPathVariableEditor != null) {
           PathVariableEditorDialog(props = content.showPathVariableEditor, intents)
         }
@@ -140,7 +140,7 @@ private fun ActiveEnvironmentHeader(state: ViewState.Content, intents: Intents) 
 }
 
 @Composable
-private fun UrlList(urls: List<UrlConfiguration>, intents: Intents) {
+private fun UrlList(urls: List<UrlConfiguration>, additionalBaseUrls: Map<String, String>, intents: Intents) {
   val expandedIds = remember { mutableStateListOf<UrlConfiguration.Id>() }
   LazyColumn {
     itemsIndexed(urls, key = { _, item -> item.id.value }) { index, item ->
@@ -149,6 +149,7 @@ private fun UrlList(urls: List<UrlConfiguration>, intents: Intents) {
       }
       UrlListItem(
         props = item,
+        baseUrl = item.baseUrlKey?.let { additionalBaseUrls[it] ?: it },
         isExpanded = expandedIds.contains(item.id),
         onClick = {
           if (expandedIds.contains(item.id)) {

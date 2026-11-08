@@ -10,36 +10,32 @@ import ru.kode.pathfinder.android.store.Environment as EnvironmentStorageModel
 import ru.kode.pathfinder.android.store.pathVariable.FindByConfigurationId as FindPathVarByConfigurationId
 import ru.kode.pathfinder.android.store.queryParameter.FindByConfigurationId as FindQueryVarByConfigurationId
 
-internal fun Environment.toStorageModel(): EnvironmentStorageModel {
-  return EnvironmentStorageModel(
-    id = this.id.value,
-    name = this.name,
-    baseUrl = this.baseUrl,
-    queryParameters = this.queryParameters?.toList(),
-    createdAt = System.currentTimeMillis(),
-    updatedAt = System.currentTimeMillis(),
-  )
-}
+internal fun Environment.toStorageModel(): EnvironmentStorageModel = EnvironmentStorageModel(
+  id = this.id.value,
+  name = this.name,
+  baseUrl = this.baseUrl,
+  queryParameters = this.queryParameters?.toList(),
+  additionalBaseUrls = this.additionalBaseUrls.takeIf { it.isNotEmpty() },
+  createdAt = System.currentTimeMillis(),
+  updatedAt = System.currentTimeMillis(),
+)
 
-internal fun UrlSpec.toUrlConfigurationStorageModel(environmentId: EnvironmentId): UrlConfiguration {
-  return UrlConfiguration(
-    id = createStorageId(environmentId),
-    specId = this.id.value,
-    environmentId = environmentId.value,
-    pathTemplate = this.pathTemplate,
-    name = this.name,
-    httpMethod = this.httpMethod.toStorageModel(),
-    createdAt = System.currentTimeMillis(),
-    updatedAt = System.currentTimeMillis(),
-  )
-}
+internal fun UrlSpec.toUrlConfigurationStorageModel(environmentId: EnvironmentId): UrlConfiguration = UrlConfiguration(
+  id = createStorageId(environmentId),
+  specId = this.id.value,
+  environmentId = environmentId.value,
+  pathTemplate = this.pathTemplate,
+  name = this.name,
+  httpMethod = this.httpMethod.toStorageModel(),
+  createdAt = System.currentTimeMillis(),
+  updatedAt = System.currentTimeMillis(),
+  baseUrlKey = this.baseUrlKey,
+)
 
-private fun UrlSpec.createStorageId(environmentId: EnvironmentId): String {
-  return buildString {
-    append(this@createStorageId.id.value)
-    append('_')
-    append(environmentId.value)
-  }
+private fun UrlSpec.createStorageId(environmentId: EnvironmentId): String = buildString {
+  append(this@createStorageId.id.value)
+  append('_')
+  append(environmentId.value)
 }
 
 internal fun mapToEnvironmentDomainModel(
@@ -47,48 +43,43 @@ internal fun mapToEnvironmentDomainModel(
   name: String,
   baseUrl: String,
   queryParameters: List<String>?,
-): Environment {
-  return Environment(
-    id = EnvironmentId(id),
-    name = name,
-    baseUrl = baseUrl,
-    queryParameters = queryParameters?.toSet()
-  )
-}
+  additionalBaseUrls: Map<String, String>?,
+): Environment = Environment(
+  id = EnvironmentId(id),
+  name = name,
+  baseUrl = baseUrl,
+  queryParameters = queryParameters?.toSet(),
+  additionalBaseUrls = additionalBaseUrls.orEmpty(),
+)
 
 internal fun FindByEnvironmentAndSpecId.toDomainModel(
   pathVariables: List<FindPathVarByConfigurationId>,
   queryParameters: List<FindQueryVarByConfigurationId>,
-): ru.kode.pathfinder.UrlConfiguration {
-  return UrlConfigurationDomainModel(
-    id = UrlConfigurationDomainModel.Id(id),
-    pathTemplate = pathTemplate,
-    name = name,
-    httpMethod = this.httpMethod.toDomainModel(),
-    pathVariableValues = pathVariables.associateBy({ it.name }, { it.value_ }),
-    queryParameterValues = queryParameters.associateBy({ it.name }, { it.value_ }),
-  )
+): ru.kode.pathfinder.UrlConfiguration = UrlConfigurationDomainModel(
+  id = UrlConfigurationDomainModel.Id(id),
+  pathTemplate = pathTemplate,
+  name = name,
+  httpMethod = this.httpMethod.toDomainModel(),
+  pathVariableValues = pathVariables.associateBy({ it.name }, { it.value_ }),
+  queryParameterValues = queryParameters.associateBy({ it.name }, { it.value_ }),
+  baseUrlKey = baseUrlKey,
+)
+
+internal fun UrlSpec.HttpMethod.toStorageModel(): String = when (this) {
+  UrlSpec.HttpMethod.GET -> "GET"
+  UrlSpec.HttpMethod.POST -> "POST"
+  UrlSpec.HttpMethod.PUT -> "PUT"
+  UrlSpec.HttpMethod.UPDATE -> "UPDATE"
+  UrlSpec.HttpMethod.PATCH -> "PATCH"
+  UrlSpec.HttpMethod.DELETE -> "DELETE"
 }
 
-internal fun UrlSpec.HttpMethod.toStorageModel(): String {
-  return when (this) {
-    UrlSpec.HttpMethod.GET -> "GET"
-    UrlSpec.HttpMethod.POST -> "POST"
-    UrlSpec.HttpMethod.PUT -> "PUT"
-    UrlSpec.HttpMethod.UPDATE -> "UPDATE"
-    UrlSpec.HttpMethod.PATCH -> "PATCH"
-    UrlSpec.HttpMethod.DELETE -> "DELETE"
-  }
-}
-
-internal fun String.toDomainModel(): UrlSpec.HttpMethod {
-  return when (this) {
-    "GET" -> UrlSpec.HttpMethod.GET
-    "POST" -> UrlSpec.HttpMethod.POST
-    "PUT" -> UrlSpec.HttpMethod.PUT
-    "UPDATE" -> UrlSpec.HttpMethod.UPDATE
-    "PATCH" -> UrlSpec.HttpMethod.PATCH
-    "DELETE" -> UrlSpec.HttpMethod.DELETE
-    else -> error("unknown http method code $this")
-  }
+internal fun String.toDomainModel(): UrlSpec.HttpMethod = when (this) {
+  "GET" -> UrlSpec.HttpMethod.GET
+  "POST" -> UrlSpec.HttpMethod.POST
+  "PUT" -> UrlSpec.HttpMethod.PUT
+  "UPDATE" -> UrlSpec.HttpMethod.UPDATE
+  "PATCH" -> UrlSpec.HttpMethod.PATCH
+  "DELETE" -> UrlSpec.HttpMethod.DELETE
+  else -> error("unknown http method code $this")
 }

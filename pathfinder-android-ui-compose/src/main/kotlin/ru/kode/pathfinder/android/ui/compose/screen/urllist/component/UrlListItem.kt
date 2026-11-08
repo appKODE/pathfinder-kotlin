@@ -33,6 +33,7 @@ internal fun UrlListItem(
   onEditPathVariablesClick: () -> Unit,
   onEditQueryParametersClick: () -> Unit,
   isExpanded: Boolean,
+  baseUrl: String? = null,
 ) {
   Column(modifier = modifier) {
     Row(
@@ -55,6 +56,13 @@ internal fun UrlListItem(
           color = MaterialTheme.colors.onSurface.copy(alpha = ContentAlpha.medium),
           text = props.name,
         )
+        if (baseUrl != null) {
+          Text(
+            style = MaterialTheme.typography.caption,
+            color = MaterialTheme.colors.onSurface.copy(alpha = ContentAlpha.medium),
+            text = baseUrl.substringAfter("://").substringBefore('/'),
+          )
+        }
       }
     }
     if (isExpanded) {
@@ -98,7 +106,7 @@ private fun Details(
             style = MaterialTheme.typography.body1,
             text = pathVariables
               .filterValues { it.isNotEmpty() }
-              .entries.joinToString() { (key, value) -> "$key=$value" }
+              .entries.joinToString { (key, value) -> "$key=$value" }
           )
         }
         Button(
@@ -130,7 +138,7 @@ private fun Details(
             style = MaterialTheme.typography.body1,
             text = queryParameters
               .filterValues { it.isNotEmpty() }
-              .entries.joinToString() { (key, value) -> "$key=$value" }
+              .entries.joinToString { (key, value) -> "$key=$value" }
           )
         }
         Button(

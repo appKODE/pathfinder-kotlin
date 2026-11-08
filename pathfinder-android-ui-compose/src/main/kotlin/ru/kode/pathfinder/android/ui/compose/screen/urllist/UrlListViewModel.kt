@@ -9,9 +9,7 @@ import ru.kode.pathfinder.Store
 import ru.kode.pathfinder.android.ui.compose.screen.urllist.entity.PathVariableEditorProps
 import ru.kode.pathfinder.android.ui.compose.screen.urllist.entity.QueryParameterEditorProps
 
-class UrlListViewModel(
-  private val store: Store
-) : ViewModel<ViewState, Intents>() {
+class UrlListViewModel(private val store: Store) : ViewModel<ViewState, Intents>() {
 
   override fun buildMachine() = machine<ViewState> {
     initial = ViewState() to null
@@ -102,7 +100,11 @@ class UrlListViewModel(
       }
     }
 
+    // save closes the editor itself: a separate dismiss intent may be reduced before this one and clear editedId
     onEach(intent(Intents::saveEditedPathVariables)) {
+      transitionTo { state, _ ->
+        state.updateContent { content -> content.copy(showPathVariableEditor = null, editedId = null) }
+      }
       action { state, _, variables ->
         store.updatePathVariables(
           state.content?.editedId ?: error("no editedId in state"),
@@ -140,6 +142,9 @@ class UrlListViewModel(
     }
 
     onEach(intent(Intents::saveEditedQueryParameters)) {
+      transitionTo { state, _ ->
+        state.updateContent { content -> content.copy(showQueryParameterEditor = null, editedId = null) }
+      }
       action { state, _, parameters ->
         store
           .updateQueryParameters(
@@ -151,14 +156,12 @@ class UrlListViewModel(
   }
 }
 
-private inline fun ViewState.updateContent(map: (content: ViewState.Content) -> ViewState.Content): ViewState {
-  return this.copy(
+private inline fun ViewState.updateContent(map: (content: ViewState.Content) -> ViewState.Content): ViewState =
+  this.copy(
     content = this.content?.let { map(it) } ?: error("unexpected: content is null")
   )
-}
 
-private inline fun ViewState.updateContentSafe(map: (content: ViewState.Content?) -> ViewState.Content?): ViewState {
-  return this.copy(
+private inline fun ViewState.updateContentSafe(map: (content: ViewState.Content?) -> ViewState.Content?): ViewState =
+  this.copy(
     content = this.content?.let { map(it) }
   )
-}

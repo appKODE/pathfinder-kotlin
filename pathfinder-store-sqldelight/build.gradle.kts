@@ -1,14 +1,18 @@
-import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+import com.vanniktech.maven.publish.AndroidSingleVariantLibrary
+import com.vanniktech.maven.publish.JavadocJar
 
 plugins {
-  alias(libs.plugins.kotlinAndroid)
-  id("com.android.library")
+  alias(libs.plugins.androidLibrary)
   alias(libs.plugins.sqlDelight)
-  `maven-publish`
+  alias(libs.plugins.vanniktech.maven.publish)
+  alias(libs.plugins.kover)
 }
 
+group = providers.gradleProperty("pomGroupId").get()
+version = providers.gradleProperty("versionName").get()
+
 android {
-  compileSdk = 34
+  compileSdk = libs.versions.compileSdk.get().toInt()
 
   namespace = "ru.kode.pathfinder.android.store"
 
@@ -19,21 +23,17 @@ android {
     }
   }
 
-  publishing {
-    singleVariant("release") {
-      withSourcesJar()
-      withJavadocJar()
-    }
+  testOptions {
+    // android.util.Log is a no-op in JVM tests
+    unitTests.isReturnDefaultValues = true
   }
 }
 
-publishing {
-  publications {
-    register<MavenPublication>("release") {
-      afterEvaluate {
-        from(components["release"])
-      }
-    }
+kotlin {
+  jvmToolchain(17)
+
+  compilerOptions {
+    moduleName.set("pathfinder-store-sqldelight")
   }
 }
 
@@ -46,14 +46,62 @@ sqldelight {
   }
 }
 
-dependencies {
-  api(project(":pathfinder"))
+mavenPublishing {
+  coordinates(artifactId = "pathfinder-store-sqldelight")
+  configure(AndroidSingleVariantLibrary(javadocJar = JavadocJar.Empty()))
 
-  implementation(kotlin("stdlib-jdk8"))
-  implementation(libs.sqlDelightAndroidDriver)
-  implementation(libs.sqlDelightCoroutines)
+  publishToMavenCentral()
+  signAllPublications()
+
+  pom {
+    val pomName: String by project
+    val pomDescription: String by project
+    val pomUrl: String by project
+    val pomScmUrl: String by project
+    val pomScmConnection: String by project
+    val pomScmDevConnection: String by project
+    val pomLicenseName: String by project
+    val pomLicenseUrl: String by project
+    val pomLicenseDist: String by project
+    val pomDeveloperId: String by project
+    val pomDeveloperName: String by project
+
+    name.set(pomName)
+    description.set(pomDescription)
+    url.set(pomUrl)
+
+    scm {
+      url.set(pomScmUrl)
+      connection.set(pomScmConnection)
+      developerConnection.set(pomScmDevConnection)
+    }
+
+    licenses {
+      license {
+        name.set(pomLicenseName)
+        url.set(pomLicenseUrl)
+        distribution.set(pomLicenseDist)
+      }
+    }
+
+    developers {
+      developer {
+        id.set(pomDeveloperId)
+        name.set(pomDeveloperName)
+      }
+    }
+  }
 }
 
-tasks.withType<KotlinCompile> {
-  kotlinOptions.moduleName = "pathfinder-store-sqldelight"
+dependencies {
+  api(project(":pathfinder"))
+  // was exposed by the SQLDelight 2.0 plugin in 0.11.x, consumers rely on it
+  api(libs.sqlDelightRuntime)
+
+  implementation(libs.sqlDelightAndroidDriver)
+  implementation(libs.sqlDelightCoroutines)
+
+  testImplementation(kotlin("test-junit5"))
+  testImplementation(libs.coroutines.test)
+  testImplementation(libs.sqlDelightJvmDriver)
 }

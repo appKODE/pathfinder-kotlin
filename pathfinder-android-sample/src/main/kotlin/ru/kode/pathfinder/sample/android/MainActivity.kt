@@ -2,6 +2,7 @@ package ru.kode.pathfinder.sample.android
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
@@ -29,8 +30,10 @@ import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.callbackFlow
+import kotlinx.coroutines.launch
 import ru.kode.pathfinder.Configuration
 import ru.kode.pathfinder.Environment
 import ru.kode.pathfinder.EnvironmentId
@@ -56,6 +59,7 @@ class MainActivity : ComponentActivity() {
       val controller = remember(pathFinder) {
         pathFinder?.createConfigurationPanelController()
       }
+      BackHandler(enabled = showConfigurator) { showConfigurator = false }
       if (showConfigurator) {
         controller?.Content()
       } else {
@@ -63,6 +67,7 @@ class MainActivity : ComponentActivity() {
           MainScreen(
             pathFinder = pathFinder!!,
             urlSpecId = configuration.urlSpecs[1].id,
+            authUrlSpecId = configuration.urlSpecs[0].id,
             onConfigure = { showConfigurator = !showConfigurator },
             onChangeBaseUrl = { changeBaseUrl(pathFinder!!, it) }
           )
@@ -72,16 +77,10 @@ class MainActivity : ComponentActivity() {
   }
 
   private fun changeBaseUrl(pathFinder: PathFinder, baseUrl: String) {
-    pathFinder.updateEachEnvironment { env ->
-      env.copy(baseUrl = baseUrl)
-    }
-  }
-
-  override fun onBackPressed() {
-    if (showConfigurator) {
-      showConfigurator = false
-    } else {
-      super.onBackPressed()
+    lifecycleScope.launch {
+      pathFinder.updateEachEnvironment { env ->
+        env.copy(baseUrl = baseUrl)
+      }
     }
   }
 
@@ -89,6 +88,7 @@ class MainActivity : ComponentActivity() {
   private fun MainScreen(
     pathFinder: PathFinder,
     urlSpecId: UrlSpecId,
+    authUrlSpecId: UrlSpecId,
     onConfigure: () -> Unit,
     onChangeBaseUrl: (String) -> Unit,
   ) {
@@ -120,6 +120,15 @@ class MainActivity : ComponentActivity() {
         text = url,
         fontSize = 20.sp,
       )
+      Spacer(modifier = Modifier.height(32.dp))
+      Text(text = "URL with a named base url", style = MaterialTheme.typography.h6)
+      val authUrl by produceState(initialValue = "", currentEnvironment, showConfigurator) {
+        value = pathFinder.buildUrl(authUrlSpecId)
+      }
+      Text(
+        text = authUrl,
+        fontSize = 20.sp,
+      )
 
       Spacer(modifier = Modifier.height(64.dp))
 
@@ -140,37 +149,38 @@ class MainActivity : ComponentActivity() {
     }
   }
 
-  private fun createConfiguration(): Configuration {
-    return Configuration(
-      environments = listOf(
-        Environment(
-          id = EnvironmentId("mock"),
-          name = "Mock",
-          baseUrl = "https://mock.project.ru/v1",
-          queryParameters = setOf("__example", "__code"),
-        ),
-        Environment(
-          id = EnvironmentId("prod"),
-          name = "Production",
-          baseUrl = "https://api.project.ru/v1",
-          queryParameters = null,
-        ),
+  private fun createConfiguration(): Configuration = Configuration(
+    environments = listOf(
+      Environment(
+        id = EnvironmentId("mock"),
+        name = "Mock",
+        baseUrl = "https://mock.project.ru/v1",
+        queryParameters = setOf("__example", "__code"),
+        additionalBaseUrls = mapOf("auth" to "https://auth.mock.project.ru"),
       ),
-      urlSpecs = listOf(
-        UrlSpec(
-          pathTemplate = "auth/login",
-          UrlSpec.HttpMethod.POST,
-          name = "Perform login",
-        ),
-        UrlSpec(
-          pathTemplate = "{categoryId}/users/{userId}",
-          UrlSpec.HttpMethod.POST,
-          name = "Get user by category",
-        )
+      Environment(
+        id = EnvironmentId("prod"),
+        name = "Production",
+        baseUrl = "https://api.project.ru/v1",
+        queryParameters = null,
+        additionalBaseUrls = mapOf("auth" to "https://auth.project.ru"),
       ),
-      defaultEnvironmentId = EnvironmentId("mock"),
-    )
-  }
+    ),
+    urlSpecs = listOf(
+      UrlSpec(
+        pathTemplate = "auth/login",
+        UrlSpec.HttpMethod.POST,
+        name = "Perform login",
+        baseUrlKey = "auth",
+      ),
+      UrlSpec(
+        pathTemplate = "{categoryId}/users/{userId}",
+        UrlSpec.HttpMethod.POST,
+        name = "Get user by category",
+      )
+    ),
+    defaultEnvironmentId = EnvironmentId("mock"),
+  )
 }
 
 private fun PathFinder.currentEnvironment() = callbackFlow {

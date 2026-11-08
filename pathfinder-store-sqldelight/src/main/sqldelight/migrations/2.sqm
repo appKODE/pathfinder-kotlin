@@ -1,0 +1,2 @@
+ALTER TABLE Environment ADD COLUMN additionalBaseUrls TEXT;
+ALTER TABLE UrlConfiguration ADD COLUMN baseUrlKey TEXT;

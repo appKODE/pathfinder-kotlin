@@ -7,7 +7,7 @@ interface Store {
 
   suspend fun replaceEnvironment(environment: Environment)
 
-  fun changeActiveEnvironment(id: EnvironmentId)
+  suspend fun changeActiveEnvironment(id: EnvironmentId)
   fun activeEnvironmentId(): Flow<EnvironmentId?>
   suspend fun readActiveEnvironmentId(): EnvironmentId?
 

@@ -1,9 +1,6 @@
 package ru.kode.pathfinder
 
-class DefaultResolver(
-  private val store: Store,
-  private val environmentId: EnvironmentId,
-) : PathResolver {
+class DefaultResolver(private val store: Store, private val environmentId: EnvironmentId) : PathResolver {
 
   override suspend fun buildUrl(
     id: UrlSpecId,
@@ -20,8 +17,15 @@ class DefaultResolver(
       // this resolver must be created only after initial population, if not → it is an error
       ?: error("internal error: no environment configuration for environmentId = ${environmentId.value}")
 
+    val baseUrl = configuration.baseUrlKey
+      ?.let { key ->
+        environment.additionalBaseUrls[key]
+          ?: error("no base url '$key' in environment ${environmentId.value}")
+      }
+      ?: environment.baseUrl
+
     return buildUrl(
-      environment.baseUrl,
+      baseUrl,
       configuration.pathTemplate,
       // values saved in store have higher precedence, so they are applied last: to override external ones
       pathVariables.plus(configuration.pathVariableValues.filterValues { it.isNotBlank() }),

@@ -16,6 +16,8 @@ data class Configuration(
         append(e.name)
         append(e.queryParameters?.joinToString().orEmpty())
         append(e.baseUrl)
+        // appended only when set: keeps checksums (and stored overrides) of existing configurations
+        if (e.additionalBaseUrls.isNotEmpty()) append(e.additionalBaseUrls.toSortedMap())
       }
     }
     val urlsKey = buildString {
@@ -25,6 +27,7 @@ data class Configuration(
         append(spec.httpMethod.name)
         append(spec.pathTemplate)
         append(spec.name)
+        spec.baseUrlKey?.let(::append)
       }
     }
     return try {
@@ -40,6 +43,4 @@ data class Configuration(
   }
 }
 
-private fun ByteArray.toHexString(): String {
-  return joinToString("") { (0xFF and it.toInt()).toString(16).padStart(2, '0') }
-}
+private fun ByteArray.toHexString(): String = joinToString("") { (0xFF and it.toInt()).toString(16).padStart(2, '0') }

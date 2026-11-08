@@ -12,6 +12,7 @@ data class UrlConfiguration(
   val httpMethod: UrlSpec.HttpMethod,
   val pathVariableValues: Map<String, String> = emptyMap(),
   val queryParameterValues: Map<String, String> = emptyMap(),
+  val baseUrlKey: String? = null,
 ) {
 
   @JvmInline

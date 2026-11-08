@@ -10,6 +10,7 @@
 * Fix: `SqlDelightStore.replaceEnvironment` changed the stored configuration version, so the next launch wiped all
   stored environments and overrides
 * Fix: replacing with a new environment id created no urls for it, so `buildUrl` failed for that environment
+* Fix: saving path variables or query parameters in the debug panel could fail with `no editedId in state`
 * Publish to Maven Central via Central Portal; update dependencies (Kotlin 2.3.20, AGP 9.0.1, Compose 1.10.6,
   SQLDelight 2.4.1). Store migration 2 adds the new columns
 

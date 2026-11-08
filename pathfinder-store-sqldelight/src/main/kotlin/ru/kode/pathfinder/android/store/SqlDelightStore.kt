@@ -59,46 +59,23 @@ class SqlDelightStore(context: Context) : Store {
     }
   }
 
+  // Does not touch the configuration version: it always is a checksum of the declared configuration,
+  // so runtime changes survive app restarts until the declared configuration changes.
   override suspend fun replaceEnvironment(environment: Environment) {
     withContext(Dispatchers.IO) {
       database.transaction {
+        val isNew = database.environmentQueries.findById(environment.id.value).executeAsOneOrNull() == null
         database.environmentQueries.insertOne(environment.toStorageModel())
-        val newVersion = recomputeVersionFromDB()
-        val activeEnvironmentId =
-          database.configurationQueries.findActiveEnvironment().executeAsOneOrNull()
-            ?: error("no active environment, has PathFinder been initialized?")
-        database.configurationQueries.upsertVersion(newVersion, activeEnvironmentId)
+        if (isNew) {
+          val urlSpecs = database.urlConfigurationQueries
+            .findAllSpecs { pathTemplate, name, httpMethod ->
+              UrlSpec(pathTemplate = pathTemplate, httpMethod = httpMethod.toDomainModel(), name = name)
+            }
+            .executeAsList()
+          saveInitialUrlConfigurations(environment, urlSpecs)
+        }
       }
     }
-  }
-
-  private fun recomputeVersionFromDB(): String = database.transactionWithResult {
-    val environments = database.environmentQueries
-      .findAll { id, name, baseUrl, queryParameters ->
-        Environment(
-          id = EnvironmentId(id),
-          name = name,
-          baseUrl = baseUrl,
-          queryParameters = queryParameters?.toSet()
-        )
-      }
-      .executeAsList()
-    val urlSpecs = database.urlConfigurationQueries
-      .findAll { pathTemplate, name, httpMethod ->
-        UrlSpec(pathTemplate = pathTemplate, httpMethod = httpMethod.toDomainModel(), name = name)
-      }
-      .executeAsList()
-
-    val activeEnvironmentId =
-      database.configurationQueries.findActiveEnvironment().executeAsOneOrNull()
-        ?: error("no active environment, has PathFinder been initialized?")
-
-    val configuration = Configuration(
-      environments = environments,
-      urlSpecs = urlSpecs,
-      defaultEnvironmentId = EnvironmentId(activeEnvironmentId)
-    )
-    configuration.computeChecksum()
   }
 
   private fun replaceConfiguration(configuration: Configuration, newVersion: String) {
@@ -151,8 +128,10 @@ class SqlDelightStore(context: Context) : Store {
     }
   }
 
-  override fun changeActiveEnvironment(id: EnvironmentId) {
-    database.configurationQueries.upsertActiveEnvironmentId(id.value)
+  override suspend fun changeActiveEnvironment(id: EnvironmentId) {
+    withContext(Dispatchers.IO) {
+      database.configurationQueries.upsertActiveEnvironmentId(id.value)
+    }
   }
 
   override fun activeEnvironmentId(): Flow<EnvironmentId?> = database.configurationQueries

@@ -29,8 +29,10 @@ import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.callbackFlow
+import kotlinx.coroutines.launch
 import ru.kode.pathfinder.Configuration
 import ru.kode.pathfinder.Environment
 import ru.kode.pathfinder.EnvironmentId
@@ -72,8 +74,10 @@ class MainActivity : ComponentActivity() {
   }
 
   private fun changeBaseUrl(pathFinder: PathFinder, baseUrl: String) {
-    pathFinder.updateEachEnvironment { env ->
-      env.copy(baseUrl = baseUrl)
+    lifecycleScope.launch {
+      pathFinder.updateEachEnvironment { env ->
+        env.copy(baseUrl = baseUrl)
+      }
     }
   }
 

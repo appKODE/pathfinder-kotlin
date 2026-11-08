@@ -40,6 +40,4 @@ data class Configuration(
   }
 }
 
-private fun ByteArray.toHexString(): String {
-  return joinToString("") { (0xFF and it.toInt()).toString(16).padStart(2, '0') }
-}
+private fun ByteArray.toHexString(): String = joinToString("") { (0xFF and it.toInt()).toString(16).padStart(2, '0') }

@@ -140,37 +140,35 @@ class MainActivity : ComponentActivity() {
     }
   }
 
-  private fun createConfiguration(): Configuration {
-    return Configuration(
-      environments = listOf(
-        Environment(
-          id = EnvironmentId("mock"),
-          name = "Mock",
-          baseUrl = "https://mock.project.ru/v1",
-          queryParameters = setOf("__example", "__code"),
-        ),
-        Environment(
-          id = EnvironmentId("prod"),
-          name = "Production",
-          baseUrl = "https://api.project.ru/v1",
-          queryParameters = null,
-        ),
+  private fun createConfiguration(): Configuration = Configuration(
+    environments = listOf(
+      Environment(
+        id = EnvironmentId("mock"),
+        name = "Mock",
+        baseUrl = "https://mock.project.ru/v1",
+        queryParameters = setOf("__example", "__code"),
       ),
-      urlSpecs = listOf(
-        UrlSpec(
-          pathTemplate = "auth/login",
-          UrlSpec.HttpMethod.POST,
-          name = "Perform login",
-        ),
-        UrlSpec(
-          pathTemplate = "{categoryId}/users/{userId}",
-          UrlSpec.HttpMethod.POST,
-          name = "Get user by category",
-        )
+      Environment(
+        id = EnvironmentId("prod"),
+        name = "Production",
+        baseUrl = "https://api.project.ru/v1",
+        queryParameters = null,
       ),
-      defaultEnvironmentId = EnvironmentId("mock"),
-    )
-  }
+    ),
+    urlSpecs = listOf(
+      UrlSpec(
+        pathTemplate = "auth/login",
+        UrlSpec.HttpMethod.POST,
+        name = "Perform login",
+      ),
+      UrlSpec(
+        pathTemplate = "{categoryId}/users/{userId}",
+        UrlSpec.HttpMethod.POST,
+        name = "Get user by category",
+      )
+    ),
+    defaultEnvironmentId = EnvironmentId("mock"),
+  )
 }
 
 private fun PathFinder.currentEnvironment() = callbackFlow {

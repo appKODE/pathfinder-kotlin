@@ -1,14 +1,10 @@
-import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
-
 plugins {
-  alias(libs.plugins.kotlinAndroid)
-  id("com.android.library")
+  alias(libs.plugins.androidLibrary)
   alias(libs.plugins.sqlDelight)
-  `maven-publish`
 }
 
 android {
-  compileSdk = 34
+  compileSdk = libs.versions.compileSdk.get().toInt()
 
   namespace = "ru.kode.pathfinder.android.store"
 
@@ -18,22 +14,13 @@ android {
       minCompileSdk = 26
     }
   }
-
-  publishing {
-    singleVariant("release") {
-      withSourcesJar()
-      withJavadocJar()
-    }
-  }
 }
 
-publishing {
-  publications {
-    register<MavenPublication>("release") {
-      afterEvaluate {
-        from(components["release"])
-      }
-    }
+kotlin {
+  jvmToolchain(17)
+
+  compilerOptions {
+    moduleName.set("pathfinder-store-sqldelight")
   }
 }
 
@@ -49,11 +36,6 @@ sqldelight {
 dependencies {
   api(project(":pathfinder"))
 
-  implementation(kotlin("stdlib-jdk8"))
   implementation(libs.sqlDelightAndroidDriver)
   implementation(libs.sqlDelightCoroutines)
-}
-
-tasks.withType<KotlinCompile> {
-  kotlinOptions.moduleName = "pathfinder-store-sqldelight"
 }

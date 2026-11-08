@@ -1,13 +1,10 @@
-import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
-
 plugins {
-  alias(libs.plugins.kotlinAndroid)
-  id("com.android.library")
-  `maven-publish`
+  alias(libs.plugins.androidLibrary)
+  alias(libs.plugins.kotlinCompose)
 }
 
 android {
-  compileSdk = 34
+  compileSdk = libs.versions.compileSdk.get().toInt()
 
   namespace = "ru.kode.pathfinder.android.ui.compose"
 
@@ -18,43 +15,27 @@ android {
     }
   }
 
-  composeOptions {
-    kotlinCompilerExtensionVersion = libs.versions.composeCompiler.get()
-  }
-
   buildFeatures {
     compose = true
   }
-
-  publishing {
-    singleVariant("release") {
-      withSourcesJar()
-      withJavadocJar()
-    }
-  }
 }
 
-publishing {
-  publications {
-    register<MavenPublication>("release") {
-      afterEvaluate {
-        from(components["release"])
-      }
-    }
+kotlin {
+  jvmToolchain(17)
+
+  compilerOptions {
+    moduleName.set("pathfinder-android-compose")
+    optIn.addAll(
+      "androidx.compose.material.ExperimentalMaterialApi",
+      "kotlinx.coroutines.ExperimentalCoroutinesApi",
+    )
   }
 }
 
 dependencies {
   api(project(":pathfinder"))
 
-  implementation(kotlin("stdlib-jdk8"))
   implementation(libs.bundles.compose)
   implementation(libs.amviViewModel)
   implementation(libs.amviCompose)
-}
-
-tasks.withType<KotlinCompile> {
-  kotlinOptions.moduleName = "pathfinder-android-compose"
-  kotlinOptions.freeCompilerArgs += "-opt-in=androidx.compose.material.ExperimentalMaterialApi"
-  kotlinOptions.freeCompilerArgs += "-opt-in=kotlinx.coroutines.ExperimentalCoroutinesApi"
 }

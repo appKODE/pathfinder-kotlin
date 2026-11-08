@@ -98,7 +98,7 @@ private fun Details(
             style = MaterialTheme.typography.body1,
             text = pathVariables
               .filterValues { it.isNotEmpty() }
-              .entries.joinToString() { (key, value) -> "$key=$value" }
+              .entries.joinToString { (key, value) -> "$key=$value" }
           )
         }
         Button(
@@ -130,7 +130,7 @@ private fun Details(
             style = MaterialTheme.typography.body1,
             text = queryParameters
               .filterValues { it.isNotEmpty() }
-              .entries.joinToString() { (key, value) -> "$key=$value" }
+              .entries.joinToString { (key, value) -> "$key=$value" }
           )
         }
         Button(

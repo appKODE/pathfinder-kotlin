@@ -72,35 +72,33 @@ class SqlDelightStore(context: Context) : Store {
     }
   }
 
-  private fun recomputeVersionFromDB(): String {
-    return database.transactionWithResult {
-      val environments = database.environmentQueries
-        .findAll { id, name, baseUrl, queryParameters ->
-          Environment(
-            id = EnvironmentId(id),
-            name = name,
-            baseUrl = baseUrl,
-            queryParameters = queryParameters?.toSet()
-          )
-        }
-        .executeAsList()
-      val urlSpecs = database.urlConfigurationQueries
-        .findAll { pathTemplate, name, httpMethod ->
-          UrlSpec(pathTemplate = pathTemplate, httpMethod = httpMethod.toDomainModel(), name = name)
-        }
-        .executeAsList()
+  private fun recomputeVersionFromDB(): String = database.transactionWithResult {
+    val environments = database.environmentQueries
+      .findAll { id, name, baseUrl, queryParameters ->
+        Environment(
+          id = EnvironmentId(id),
+          name = name,
+          baseUrl = baseUrl,
+          queryParameters = queryParameters?.toSet()
+        )
+      }
+      .executeAsList()
+    val urlSpecs = database.urlConfigurationQueries
+      .findAll { pathTemplate, name, httpMethod ->
+        UrlSpec(pathTemplate = pathTemplate, httpMethod = httpMethod.toDomainModel(), name = name)
+      }
+      .executeAsList()
 
-      val activeEnvironmentId =
-        database.configurationQueries.findActiveEnvironment().executeAsOneOrNull()
-          ?: error("no active environment, has PathFinder been initialized?")
+    val activeEnvironmentId =
+      database.configurationQueries.findActiveEnvironment().executeAsOneOrNull()
+        ?: error("no active environment, has PathFinder been initialized?")
 
-      val configuration = Configuration(
-        environments = environments,
-        urlSpecs = urlSpecs,
-        defaultEnvironmentId = EnvironmentId(activeEnvironmentId)
-      )
-      configuration.computeChecksum()
-    }
+    val configuration = Configuration(
+      environments = environments,
+      urlSpecs = urlSpecs,
+      defaultEnvironmentId = EnvironmentId(activeEnvironmentId)
+    )
+    configuration.computeChecksum()
   }
 
   private fun replaceConfiguration(configuration: Configuration, newVersion: String) {
@@ -157,72 +155,57 @@ class SqlDelightStore(context: Context) : Store {
     database.configurationQueries.upsertActiveEnvironmentId(id.value)
   }
 
-  override fun activeEnvironmentId(): Flow<EnvironmentId?> {
-    return database.configurationQueries
-      .findActiveEnvironment()
-      .asFlow()
-      .map { it.executeAsOneOrNull()?.let(::EnvironmentId) }
+  override fun activeEnvironmentId(): Flow<EnvironmentId?> = database.configurationQueries
+    .findActiveEnvironment()
+    .asFlow()
+    .map { it.executeAsOneOrNull()?.let(::EnvironmentId) }
+
+  override suspend fun readActiveEnvironmentId(): EnvironmentId? = withContext(Dispatchers.IO) {
+    database.configurationQueries.findActiveEnvironment().executeAsOneOrNull()
+      ?.let(::EnvironmentId)
   }
 
-  override suspend fun readActiveEnvironmentId(): EnvironmentId? {
-    return withContext(Dispatchers.IO) {
-      database.configurationQueries.findActiveEnvironment().executeAsOneOrNull()
-        ?.let(::EnvironmentId)
-    }
-  }
+  override fun environments(): Flow<List<Environment>> = database.environmentQueries
+    .findAll(::mapToEnvironmentDomainModel)
+    .asFlow()
+    .map { it.executeAsList() }
 
-  override fun environments(): Flow<List<Environment>> {
-    return database.environmentQueries
+  override suspend fun readEnvironments(): List<Environment> = withContext(Dispatchers.IO) {
+    database.environmentQueries
       .findAll(::mapToEnvironmentDomainModel)
-      .asFlow()
-      .map { it.executeAsList() }
+      .executeAsList()
   }
 
-  override suspend fun readEnvironments(): List<Environment> {
-    return withContext(Dispatchers.IO) {
-      database.environmentQueries
-        .findAll(::mapToEnvironmentDomainModel)
-        .executeAsList()
+  override suspend fun readEnvironmentById(id: EnvironmentId): Environment? = withContext(Dispatchers.IO) {
+    database.environmentQueries
+      .findById(id.value, ::mapToEnvironmentDomainModel)
+      .executeAsOneOrNull()
+  }
+
+  override fun urlConfigurations(environmentId: EnvironmentId): Flow<List<UrlConfiguration>> = combine(
+    database.urlConfigurationQueries
+      .findByEnvironmentId(environmentId.value).asFlow().map { it.executeAsList() },
+    database.pathVariableQueries.findAll().asFlow().map { it.executeAsList() },
+    database.queryParameterQueries.findAll().asFlow().map { it.executeAsList() },
+  ) { configurations, pathVariables, queryParameters ->
+    configurations.map { configuration ->
+      UrlConfiguration(
+        id = UrlConfiguration.Id(configuration.id),
+        pathTemplate = configuration.pathTemplate,
+        name = configuration.name,
+        httpMethod = configuration.httpMethod.toDomainModel(),
+        pathVariableValues = pathVariables
+          .filter { it.urlConfigurationId == configuration.id }
+          .associateBy({ it.name }, { it.value_ }),
+        queryParameterValues = queryParameters
+          .filter { it.urlConfigurationId == configuration.id }
+          .associateBy({ it.name }, { it.value_ }),
+      )
     }
   }
 
-  override suspend fun readEnvironmentById(id: EnvironmentId): Environment? {
-    return withContext(Dispatchers.IO) {
-      database.environmentQueries
-        .findById(id.value, ::mapToEnvironmentDomainModel)
-        .executeAsOneOrNull()
-    }
-  }
-
-  override fun urlConfigurations(environmentId: EnvironmentId): Flow<List<UrlConfiguration>> {
-    return combine(
-      database.urlConfigurationQueries
-        .findByEnvironmentId(environmentId.value).asFlow().map { it.executeAsList() },
-      database.pathVariableQueries.findAll().asFlow().map { it.executeAsList() },
-      database.queryParameterQueries.findAll().asFlow().map { it.executeAsList() },
-    ) { configurations, pathVariables, queryParameters ->
-      configurations.map { configuration ->
-        UrlConfiguration(
-          id = UrlConfiguration.Id(configuration.id),
-          pathTemplate = configuration.pathTemplate,
-          name = configuration.name,
-          httpMethod = configuration.httpMethod.toDomainModel(),
-          pathVariableValues = pathVariables
-            .filter { it.urlConfigurationId == configuration.id }
-            .associateBy({ it.name }, { it.value_ }),
-          queryParameterValues = queryParameters
-            .filter { it.urlConfigurationId == configuration.id }
-            .associateBy({ it.name }, { it.value_ }),
-        )
-      }
-    }
-  }
-
-  override suspend fun readUrlConfiguration(
-    urlSpecId: UrlSpecId,
-    environmentId: EnvironmentId
-  ): UrlConfiguration? {
-    return withContext(Dispatchers.IO) {
+  override suspend fun readUrlConfiguration(urlSpecId: UrlSpecId, environmentId: EnvironmentId): UrlConfiguration? =
+    withContext(Dispatchers.IO) {
       val configurationSM = database.urlConfigurationQueries
         .findByEnvironmentAndSpecId(environmentId.value, urlSpecId.value)
         .executeAsOneOrNull()
@@ -238,12 +221,8 @@ class SqlDelightStore(context: Context) : Store {
         null
       }
     }
-  }
 
-  override fun updatePathVariables(
-    id: UrlConfiguration.Id,
-    pathVariableValues: Map<String, String>
-  ) {
+  override fun updatePathVariables(id: UrlConfiguration.Id, pathVariableValues: Map<String, String>) {
     pathVariableValues.entries.forEach { (name, value) ->
       database.pathVariableQueries.updateOne(
         name = name,
@@ -254,10 +233,7 @@ class SqlDelightStore(context: Context) : Store {
     }
   }
 
-  override fun updateQueryParameters(
-    id: UrlConfiguration.Id,
-    queryParameterValues: Map<String, String>
-  ) {
+  override fun updateQueryParameters(id: UrlConfiguration.Id, queryParameterValues: Map<String, String>) {
     queryParameterValues.entries.forEach { (name, value) ->
       database.queryParameterQueries.updateOne(
         name = name,

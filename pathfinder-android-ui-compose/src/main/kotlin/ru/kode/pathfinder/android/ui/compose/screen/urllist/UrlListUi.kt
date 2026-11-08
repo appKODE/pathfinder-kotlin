@@ -79,7 +79,10 @@ private fun PathVariableEditorDialog(props: PathVariableEditorProps, intents: In
       onValueChange = { index, value ->
         editorState[index] = editorState[index].copy(value = value)
       },
-      onConfirm = { intents.saveEditedPathVariables(editorState); intents.dismissEditPathVariablesDialog() },
+      onConfirm = {
+        intents.saveEditedPathVariables(editorState)
+        intents.dismissEditPathVariablesDialog()
+      },
       onDismiss = intents.dismissEditPathVariablesDialog,
     )
   }
@@ -94,7 +97,10 @@ private fun QueryParameterEditorDialog(props: QueryParameterEditorProps, intents
       onValueChange = { index, value ->
         editorState[index] = editorState[index].copy(value = value)
       },
-      onConfirm = { intents.saveEditedQueryParameters(editorState); intents.dismissEditQueryParametersDialog() },
+      onConfirm = {
+        intents.saveEditedQueryParameters(editorState)
+        intents.dismissEditQueryParametersDialog()
+      },
       onDismiss = intents.dismissEditQueryParametersDialog,
     )
   }

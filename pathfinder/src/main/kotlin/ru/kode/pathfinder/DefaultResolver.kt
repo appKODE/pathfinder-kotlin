@@ -1,9 +1,6 @@
 package ru.kode.pathfinder
 
-class DefaultResolver(
-  private val store: Store,
-  private val environmentId: EnvironmentId,
-) : PathResolver {
+class DefaultResolver(private val store: Store, private val environmentId: EnvironmentId) : PathResolver {
 
   override suspend fun buildUrl(
     id: UrlSpecId,

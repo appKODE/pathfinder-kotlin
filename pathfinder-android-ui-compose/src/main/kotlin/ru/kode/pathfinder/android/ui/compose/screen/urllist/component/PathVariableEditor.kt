@@ -55,10 +55,7 @@ internal fun PathVariableEditor(
 }
 
 @Composable
-private fun Variable(
-  item: PathVariableEditorProps.Variable,
-  onValueChange: (String) -> Unit,
-) {
+private fun Variable(item: PathVariableEditorProps.Variable, onValueChange: (String) -> Unit) {
   TextField(
     modifier = Modifier.fillMaxWidth(),
     value = item.value,

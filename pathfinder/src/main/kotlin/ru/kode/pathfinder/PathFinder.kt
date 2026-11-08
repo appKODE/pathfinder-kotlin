@@ -7,9 +7,7 @@ import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-class PathFinder private constructor(
-  val store: Store,
-) {
+class PathFinder private constructor(val store: Store) {
 
   companion object {
     suspend fun create(store: Store, configuration: Configuration): PathFinder {
@@ -48,9 +46,7 @@ class PathFinder private constructor(
     id: UrlSpecId,
     pathVariables: Map<String, String> = emptyMap(),
     queryParameters: Map<String, String> = emptyMap(),
-  ): String {
-    return currentResolver.buildUrl(id, pathVariables, queryParameters)
-  }
+  ): String = currentResolver.buildUrl(id, pathVariables, queryParameters)
 
   interface Listener {
     /**

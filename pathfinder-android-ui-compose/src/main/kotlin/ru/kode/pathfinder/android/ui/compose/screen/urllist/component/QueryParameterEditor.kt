@@ -58,10 +58,7 @@ internal fun QueryParameterEditor(
 }
 
 @Composable
-private fun Parameter(
-  item: QueryParameterEditorProps.Parameter,
-  onValueChange: (String) -> Unit,
-) {
+private fun Parameter(item: QueryParameterEditorProps.Parameter, onValueChange: (String) -> Unit) {
   TextField(
     modifier = Modifier.fillMaxWidth(),
     value = item.value,

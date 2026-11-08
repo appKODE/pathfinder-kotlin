@@ -1,32 +1,18 @@
 plugins {
   alias(libs.plugins.kotlinJvm)
-  `maven-publish`
-}
-
-dependencies {
-  api(kotlin("stdlib-jdk8"))
-  api(libs.bundles.coroutines)
-
-  testImplementation(libs.bundles.koTest)
 }
 
 kotlin {
-  jvmToolchain {
-    languageVersion.set(JavaLanguageVersion.of(8))
+  jvmToolchain(17)
+
+  compilerOptions {
+    moduleName.set("pathfinder")
   }
 }
 
-publishing {
-  publications {
-    register<MavenPublication>("maven") {
-      from(components["java"])
-    }
-  }
-}
+dependencies {
+  api(libs.bundles.coroutines)
 
-tasks {
-  compileKotlin {
-    kotlinOptions.moduleName = "pathfinder"
-    kotlinOptions.jvmTarget = "1.8"
-  }
+  testImplementation(kotlin("test-junit5"))
+  testImplementation(libs.coroutines.test)
 }

@@ -100,7 +100,11 @@ class UrlListViewModel(private val store: Store) : ViewModel<ViewState, Intents>
       }
     }
 
+    // save closes the editor itself: a separate dismiss intent may be reduced before this one and clear editedId
     onEach(intent(Intents::saveEditedPathVariables)) {
+      transitionTo { state, _ ->
+        state.updateContent { content -> content.copy(showPathVariableEditor = null, editedId = null) }
+      }
       action { state, _, variables ->
         store.updatePathVariables(
           state.content?.editedId ?: error("no editedId in state"),
@@ -138,6 +142,9 @@ class UrlListViewModel(private val store: Store) : ViewModel<ViewState, Intents>
     }
 
     onEach(intent(Intents::saveEditedQueryParameters)) {
+      transitionTo { state, _ ->
+        state.updateContent { content -> content.copy(showQueryParameterEditor = null, editedId = null) }
+      }
       action { state, _, parameters ->
         store
           .updateQueryParameters(

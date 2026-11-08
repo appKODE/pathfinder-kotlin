@@ -89,6 +89,8 @@ mavenPublishing {
 
 dependencies {
   api(project(":pathfinder"))
+  // was exposed by the SQLDelight 2.0 plugin in 0.11.x, consumers rely on it
+  api(libs.sqlDelightRuntime)
 
   implementation(libs.sqlDelightAndroidDriver)
   implementation(libs.sqlDelightCoroutines)

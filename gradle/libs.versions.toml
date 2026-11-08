@@ -22,6 +22,7 @@ composeUi = { module = "androidx.compose.ui:ui", version.ref = "compose" }
 composeMaterial = { module = "androidx.compose.material:material", version.ref = "compose" }
 composeTooling = { module = "androidx.compose.ui:ui-tooling", version.ref = "compose" }
 composeRuntime = { module = "androidx.compose.runtime:runtime", version.ref = "compose" }
+sqlDelightRuntime = { module = "app.cash.sqldelight:runtime", version.ref = "sqlDelight" }
 sqlDelightAndroidDriver = { module = "app.cash.sqldelight:android-driver", version.ref = "sqlDelight" }
 sqlDelightCoroutines = { module = "app.cash.sqldelight:coroutines-extensions", version.ref = "sqlDelight" }
 activityCompose = { module = "androidx.activity:activity-compose", version.ref = "androidExtensions" }

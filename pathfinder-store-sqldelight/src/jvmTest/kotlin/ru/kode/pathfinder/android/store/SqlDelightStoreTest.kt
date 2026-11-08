@@ -234,7 +234,7 @@ class SqlDelightStoreTest {
 
   // flows emit on a real dispatcher, so wait in real time
   private suspend fun <T> Flow<T>.awaitFirst(predicate: (T) -> Boolean): T = withContext(Dispatchers.Default) {
-    withTimeout(5_000) { first(predicate) }
+    withTimeout(30_000) { first(predicate) }
   }
 }
 

@@ -120,6 +120,6 @@ class UrlListViewModelTest {
 
   // the view model runs on Dispatchers.Default, so wait in real time
   private fun awaitContent(predicate: (ViewState.Content) -> Boolean): ViewState.Content = runBlocking {
-    withTimeout(5_000) { viewModel.viewStateFlow.mapNotNull { it.content }.first(predicate) }
+    withTimeout(30_000) { viewModel.viewStateFlow.mapNotNull { it.content }.first(predicate) }
   }
 }

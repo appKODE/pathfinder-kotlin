@@ -3,6 +3,7 @@ package ru.kode.pathfinder.android.store
 import android.content.Context
 import android.util.Log
 import app.cash.sqldelight.coroutines.asFlow
+import app.cash.sqldelight.db.SqlDriver
 import app.cash.sqldelight.driver.android.AndroidSqliteDriver
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
@@ -24,24 +25,17 @@ import ru.kode.pathfinder.android.store.mapper.toStorageModel
 import ru.kode.pathfinder.android.store.mapper.toUrlConfigurationStorageModel
 import ru.kode.pathfinder.android.store.Environment as EnvironmentStorageModel
 
-class SqlDelightStore(context: Context) : Store {
+class SqlDelightStore internal constructor(driver: SqlDriver) : Store {
 
-  private val database = createDatabase(context)
+  constructor(context: Context) : this(AndroidSqliteDriver(PathFinderDatabase.Schema, context, name = "pathfinder.db"))
 
-  private fun createDatabase(context: Context): PathFinderDatabase {
-    val driver = AndroidSqliteDriver(
-      PathFinderDatabase.Schema,
-      context,
-      name = "pathfinder.db"
-    )
-    return PathFinderDatabase(
-      driver,
-      EnvironmentAdapter = EnvironmentStorageModel.Adapter(
-        queryParametersAdapter = StringListColumnAdapter(separator = ":::"),
-        additionalBaseUrlsAdapter = StringMapColumnAdapter(),
-      ),
-    )
-  }
+  private val database = PathFinderDatabase(
+    driver,
+    EnvironmentAdapter = EnvironmentStorageModel.Adapter(
+      queryParametersAdapter = StringListColumnAdapter(separator = ":::"),
+      additionalBaseUrlsAdapter = StringMapColumnAdapter(),
+    ),
+  )
 
   override suspend fun saveConfiguration(configuration: Configuration) {
     withContext(Dispatchers.IO) {

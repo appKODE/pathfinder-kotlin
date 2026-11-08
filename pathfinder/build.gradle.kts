@@ -4,6 +4,7 @@ import com.vanniktech.maven.publish.KotlinJvm
 plugins {
   alias(libs.plugins.kotlinJvm)
   alias(libs.plugins.vanniktech.maven.publish)
+  alias(libs.plugins.kover)
 }
 
 group = providers.gradleProperty("pomGroupId").get()

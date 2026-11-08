@@ -5,6 +5,7 @@ plugins {
   alias(libs.plugins.androidLibrary)
   alias(libs.plugins.sqlDelight)
   alias(libs.plugins.vanniktech.maven.publish)
+  alias(libs.plugins.kover)
 }
 
 group = providers.gradleProperty("pomGroupId").get()
@@ -20,6 +21,11 @@ android {
     aarMetadata {
       minCompileSdk = 26
     }
+  }
+
+  testOptions {
+    // android.util.Log is a no-op in JVM tests
+    unitTests.isReturnDefaultValues = true
   }
 }
 
@@ -94,4 +100,8 @@ dependencies {
 
   implementation(libs.sqlDelightAndroidDriver)
   implementation(libs.sqlDelightCoroutines)
+
+  testImplementation(kotlin("test-junit5"))
+  testImplementation(libs.coroutines.test)
+  testImplementation(libs.sqlDelightJvmDriver)
 }

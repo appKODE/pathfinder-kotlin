@@ -5,6 +5,7 @@ plugins {
   alias(libs.plugins.androidLibrary)
   alias(libs.plugins.kotlinCompose)
   alias(libs.plugins.vanniktech.maven.publish)
+  alias(libs.plugins.kover)
 }
 
 group = providers.gradleProperty("pomGroupId").get()
@@ -24,6 +25,10 @@ android {
 
   buildFeatures {
     compose = true
+  }
+
+  testOptions {
+    unitTests.isIncludeAndroidResources = true
   }
 }
 
@@ -92,4 +97,13 @@ dependencies {
   implementation(libs.bundles.compose)
   implementation(libs.amviViewModel)
   implementation(libs.amviCompose)
+
+  testImplementation(kotlin("test"))
+  testImplementation(libs.junit4)
+  testImplementation(libs.coroutines.test)
+  testImplementation(libs.robolectric)
+  testImplementation(libs.composeUiTestJunit4)
+  debugImplementation(libs.composeUiTestManifest)
+  // Robolectric and Compose tests are JUnit4, the root project runs tests on the JUnit Platform
+  testRuntimeOnly(libs.junitVintageEngine)
 }

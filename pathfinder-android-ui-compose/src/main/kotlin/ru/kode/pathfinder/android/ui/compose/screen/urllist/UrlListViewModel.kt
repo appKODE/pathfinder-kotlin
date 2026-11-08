@@ -1,8 +1,8 @@
 package ru.kode.pathfinder.android.ui.compose.screen.urllist
 
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.flatMapLatest
-import kotlinx.coroutines.flow.map
 import ru.dimsuz.unicorn2.machine
 import ru.kode.amvi.viewmodel.ViewModel
 import ru.kode.pathfinder.Store
@@ -14,13 +14,19 @@ class UrlListViewModel(private val store: Store) : ViewModel<ViewState, Intents>
   override fun buildMachine() = machine<ViewState> {
     initial = ViewState() to null
 
-    onEach(store.environments()) {
-      transitionTo { state, environments ->
+    // one flow, so the active environment and its urls always arrive together: separate flows on
+    // Dispatchers.Default raced, and urls emitted before the content existed were lost
+    onEach(
+      store.activeEnvironmentId().filterNotNull().flatMapLatest { id ->
+        combine(store.environments(), store.urlConfigurations(id)) { environments, urls ->
+          environments.find { it.id == id }?.let { it to urls }
+        }
+      }.filterNotNull()
+    ) {
+      transitionTo { state, (environment, urls) ->
         state.copy(
-          content = ViewState.Content(
-            activeEnvironment = environments.firstOrNull() ?: error("environment list is empty"),
-            urls = emptyList()
-          )
+          content = state.content?.copy(activeEnvironment = environment, urls = urls)
+            ?: ViewState.Content(activeEnvironment = environment, urls = urls)
         )
       }
     }
@@ -51,29 +57,6 @@ class UrlListViewModel(private val store: Store) : ViewModel<ViewState, Intents>
       }
       action { _, _, environmentId ->
         store.changeActiveEnvironment(environmentId)
-      }
-    }
-
-    onEach(
-      store.activeEnvironmentId().filterNotNull()
-        .map { id -> store.readEnvironmentById(id) }
-        .filterNotNull()
-    ) {
-      transitionTo { state, environment ->
-        state.updateContentSafe { content ->
-          content?.copy(activeEnvironment = environment)
-        }
-      }
-    }
-
-    onEach(
-      store.activeEnvironmentId().filterNotNull()
-        .flatMapLatest { id -> store.urlConfigurations(id) }
-    ) {
-      transitionTo { state, configs ->
-        state.updateContentSafe { content ->
-          content?.copy(urls = configs)
-        }
       }
     }
 
@@ -159,9 +142,4 @@ class UrlListViewModel(private val store: Store) : ViewModel<ViewState, Intents>
 private inline fun ViewState.updateContent(map: (content: ViewState.Content) -> ViewState.Content): ViewState =
   this.copy(
     content = this.content?.let { map(it) } ?: error("unexpected: content is null")
-  )
-
-private inline fun ViewState.updateContentSafe(map: (content: ViewState.Content?) -> ViewState.Content?): ViewState =
-  this.copy(
-    content = this.content?.let { map(it) }
   )

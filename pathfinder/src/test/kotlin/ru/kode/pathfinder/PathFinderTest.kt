@@ -1,13 +1,17 @@
 package ru.kode.pathfinder
 
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeout
 import java.util.concurrent.CopyOnWriteArrayList
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
+import kotlin.test.assertTrue
 
 class PathFinderTest {
   private val dev = Environment(
@@ -80,47 +84,161 @@ class PathFinderTest {
     assertEquals("https://example.com/users/1", pathFinder.buildUrl(prod.id, users.id, mapOf("id" to "1")))
     assertEquals(dev.id, pathFinder.currentEnvironment.id)
   }
-}
 
-private class FakeStore : Store {
-  private val environments = MutableStateFlow<List<Environment>>(emptyList())
-  private val activeId = MutableStateFlow<EnvironmentId?>(null)
-  private var specs = emptyList<UrlSpec>()
+  @Test
+  fun `create keeps the stored active environment if it is still configured`() = runTest {
+    val store = FakeStore()
+    PathFinder.create(store, configuration).switchEnvironment(prod.id)
 
-  override suspend fun saveConfiguration(configuration: Configuration) {
-    environments.value = configuration.environments
-    specs = configuration.urlSpecs
-    if (configuration.environments.none { it.id == activeId.value }) activeId.value = configuration.defaultEnvironmentId
+    assertEquals(prod.id, PathFinder.create(store, configuration).currentEnvironment.id)
   }
 
-  override suspend fun replaceEnvironment(environment: Environment) {
-    environments.value = environments.value.filter { it.id != environment.id } + environment
+  @Test
+  fun `create falls back to the default environment if the stored one is gone`() = runTest {
+    val store = FakeStore()
+    PathFinder.create(store, configuration).switchEnvironment(prod.id)
+
+    val pathFinder = PathFinder.create(store, configuration.copy(environments = listOf(dev)))
+
+    assertEquals(dev.id, pathFinder.currentEnvironment.id)
   }
 
-  override suspend fun changeActiveEnvironment(id: EnvironmentId) {
-    activeId.value = id
+  @Test
+  fun `switchEnvironment to an unknown id fails and keeps the state`() = runTest {
+    val store = FakeStore()
+    val pathFinder = PathFinder.create(store, configuration)
+
+    assertFailsWith<IllegalStateException> { pathFinder.switchEnvironment(EnvironmentId("unknown")) }
+
+    assertEquals(dev, pathFinder.currentEnvironment)
+    assertEquals(dev.id, store.readActiveEnvironmentId())
   }
 
-  override fun activeEnvironmentId(): Flow<EnvironmentId?> = activeId
-  override suspend fun readActiveEnvironmentId(): EnvironmentId? = activeId.value
-  override fun environments(): Flow<List<Environment>> = environments
-  override suspend fun readEnvironmentById(id: EnvironmentId) = environments.value.find { it.id == id }
-  override suspend fun readEnvironments() = environments.value
+  @Test
+  fun `replaceEnvironment with a new id adds an environment`() = runTest {
+    val pathFinder = PathFinder.create(FakeStore(), configuration)
+    val stage = Environment(id = EnvironmentId("stage"), name = "Stage", baseUrl = "https://stage.example.com")
 
-  override fun urlConfigurations(environmentId: EnvironmentId): Flow<List<UrlConfiguration>> =
-    environments.map { specs.map { it.toConfiguration(environmentId) } }
+    pathFinder.replaceEnvironment(stage)
 
-  override suspend fun readUrlConfiguration(urlSpecId: UrlSpecId, environmentId: EnvironmentId) =
-    specs.find { it.id == urlSpecId }?.toConfiguration(environmentId)
+    assertEquals("https://stage.example.com/users/1", pathFinder.buildUrl(stage.id, users.id, mapOf("id" to "1")))
+    assertEquals(listOf(dev, prod, stage), pathFinder.store.readEnvironments())
+    assertEquals(dev, pathFinder.currentEnvironment)
+  }
 
-  override fun updatePathVariables(id: UrlConfiguration.Id, pathVariableValues: Map<String, String>) = Unit
-  override fun updateQueryParameters(id: UrlConfiguration.Id, queryParameterValues: Map<String, String>) = Unit
+  @Test
+  fun `replaceEnvironment of the active environment updates the current one`() = runTest {
+    val pathFinder = PathFinder.create(FakeStore(), configuration)
 
-  private fun UrlSpec.toConfiguration(environmentId: EnvironmentId) = UrlConfiguration(
-    id = UrlConfiguration.Id("${environmentId.value}_${id.value}"),
-    pathTemplate = pathTemplate,
-    name = name,
-    httpMethod = httpMethod,
-    baseUrlKey = baseUrlKey,
-  )
+    pathFinder.replaceEnvironment(dev.copy(name = "Renamed"))
+
+    assertEquals("Renamed", pathFinder.currentEnvironment.name)
+  }
+
+  @Test
+  fun `updateEnvironment of an unknown id fails`() = runTest {
+    val pathFinder = PathFinder.create(FakeStore(), configuration)
+
+    assertFailsWith<IllegalStateException> { pathFinder.updateEnvironment(EnvironmentId("unknown")) { it } }
+  }
+
+  @Test
+  fun `updateEachEnvironment applies to all environments`() = runTest {
+    val pathFinder = PathFinder.create(FakeStore(), configuration)
+
+    pathFinder.updateEachEnvironment { it.copy(baseUrl = it.baseUrl.replace("https", "http")) }
+
+    assertEquals(
+      listOf("http://dev.example.com", "http://example.com"),
+      pathFinder.store.readEnvironments().map { it.baseUrl },
+    )
+    assertEquals("http://dev.example.com", pathFinder.currentEnvironment.baseUrl)
+  }
+
+  @Test
+  fun `changing the id in an updater fails`() = runTest {
+    val pathFinder = PathFinder.create(FakeStore(), configuration)
+
+    assertFailsWith<IllegalStateException> { pathFinder.updateEnvironment(dev.id) { it.copy(id = EnvironmentId("x")) } }
+    assertFailsWith<IllegalStateException> { pathFinder.updateEachEnvironment { it.copy(id = EnvironmentId("x")) } }
+    assertEquals(listOf(dev, prod), pathFinder.store.readEnvironments())
+  }
+
+  @Test
+  fun `saveConfiguration at runtime replaces environments and refreshes the current one`() = runTest {
+    val pathFinder = PathFinder.create(FakeStore(), configuration)
+    val stage = Environment(id = EnvironmentId("stage"), name = "Stage", baseUrl = "https://stage.example.com")
+
+    pathFinder.saveConfiguration(configuration.copy(environments = listOf(stage), defaultEnvironmentId = stage.id))
+
+    assertEquals(stage, pathFinder.currentEnvironment)
+    assertEquals("https://stage.example.com/users/1", pathFinder.buildUrl(users.id, mapOf("id" to "1")))
+  }
+
+  @Test
+  fun `follows external store changes and notifies listeners`() = runTest {
+    val store = FakeStore()
+    val pathFinder = PathFinder.create(store, configuration)
+    val switches = pathFinder.recordSwitches()
+
+    // the debug panel changes the store directly
+    store.changeActiveEnvironment(prod.id)
+    awaitUntil { pathFinder.currentEnvironment.id == prod.id && switches.isNotEmpty() }
+    assertEquals(listOf(prod.id), switches.toList())
+
+    store.replaceEnvironment(prod.copy(baseUrl = "https://external.example.com"))
+    awaitUntil { pathFinder.currentEnvironment.baseUrl == "https://external.example.com" && switches.size == 2 }
+    assertEquals(listOf(prod.id, prod.id), switches.toList())
+  }
+
+  @Test
+  fun `no notification for an inactive environment change, none after removeListener`() = runTest {
+    val pathFinder = PathFinder.create(FakeStore(), configuration)
+    val switches = CopyOnWriteArrayList<EnvironmentId>()
+    val listener = object : PathFinder.Listener {
+      override fun onEnvironmentSwitch(environmentId: EnvironmentId) {
+        switches.add(environmentId)
+      }
+    }
+    pathFinder.addListener(listener)
+
+    pathFinder.updateEnvironment(prod.id) { it.copy(name = "Prod2") }
+    assertTrue(switches.isEmpty())
+
+    pathFinder.removeListener(listener)
+    pathFinder.switchEnvironment(prod.id)
+    assertTrue(switches.isEmpty())
+    assertEquals(prod.id, pathFinder.currentEnvironment.id)
+  }
+
+  @Test
+  fun `concurrent updates are not lost`() = runTest {
+    val pathFinder = PathFinder.create(FakeStore(), configuration)
+
+    withContext(Dispatchers.Default) {
+      (1..50).map { async { pathFinder.updateEnvironment(dev.id) { it.copy(name = it.name + "x") } } }.awaitAll()
+    }
+
+    assertEquals("Dev" + "x".repeat(50), pathFinder.store.readEnvironmentById(dev.id)!!.name)
+    assertEquals("Dev" + "x".repeat(50), pathFinder.currentEnvironment.name)
+  }
+
+  private fun PathFinder.recordSwitches(): List<EnvironmentId> {
+    val switches = CopyOnWriteArrayList<EnvironmentId>()
+    addListener(
+      object : PathFinder.Listener {
+        override fun onEnvironmentSwitch(environmentId: EnvironmentId) {
+          switches.add(environmentId)
+        }
+      },
+    )
+    return switches
+  }
+
+  // the store observer runs on Dispatchers.IO, so wait in real time
+  private suspend fun awaitUntil(condition: () -> Boolean) = withContext(Dispatchers.Default) {
+    withTimeout(5_000) {
+      while (!condition()) delay(10)
+    }
+  }
 }

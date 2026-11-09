@@ -1,0 +1,13 @@
+CREATE TABLE LastSuccessfulFallback (
+  fallbackKey TEXT NOT NULL PRIMARY KEY,
+  baseUrl TEXT NOT NULL
+);
+
+upsert:
+INSERT OR REPLACE
+INTO LastSuccessfulFallback
+VALUES ?;
+
+findAll:
+SELECT *
+FROM LastSuccessfulFallback;

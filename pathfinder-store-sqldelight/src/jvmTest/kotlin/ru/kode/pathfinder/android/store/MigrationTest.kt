@@ -1,6 +1,7 @@
 package ru.kode.pathfinder.android.store
 
 import app.cash.sqldelight.driver.jdbc.sqlite.JdbcSqliteDriver
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import ru.kode.pathfinder.Configuration
 import ru.kode.pathfinder.Environment
@@ -14,7 +15,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertNull
 
 /**
- * Upgrade from 0.11.x: its schema is version 2.
+ * Upgrade from 0.11.x (schema version 2) and from 0.12 - 0.13 (schema version 3).
  */
 class MigrationTest {
   private val dev = Environment(
@@ -101,5 +102,33 @@ class MigrationTest {
 
     assertEquals(EnvironmentId("prod"), store.readActiveEnvironmentId())
     assertEquals(mapOf("id" to "42"), store.readUrlConfiguration(users.id, prod.id)!!.pathVariableValues)
+  }
+
+  @Test
+  fun `0_12 - 0_13 data is kept by the migration which adds fallbacks`() = runTest {
+    val file = createTempFile(suffix = ".db").toFile()
+      .also { File("src/commonMain/sqldelight/databases/3.db").copyTo(it, overwrite = true) }
+    val driver = JdbcSqliteDriver("jdbc:sqlite:${file.absolutePath}")
+    try {
+      val stored = SqlDelightStore(driver)
+      val dynamic = prod.copy(baseUrl = "https://dynamic.example.com", additionalBaseUrls = mapOf("v1" to "https://v1"))
+      stored.saveConfiguration(configuration)
+      stored.replaceEnvironment(dynamic)
+      stored.changeActiveEnvironment(prod.id)
+      stored.updatePathVariables(stored.readUrlConfiguration(users.id, prod.id)!!.id, mapOf("id" to "42"))
+
+      PathFinderDatabase.Schema.migrate(driver, 3, 4)
+      val store = SqlDelightStore(driver)
+
+      assertEquals(EnvironmentId("prod"), store.readActiveEnvironmentId())
+      assertEquals(listOf(dev, dynamic), store.readEnvironments())
+      assertEquals(mapOf("id" to "42"), store.readUrlConfiguration(users.id, prod.id)!!.pathVariableValues)
+      assertEquals(emptyList(), store.fallbackConfigurations().first())
+      store.saveLastSuccessfulFallbackUrl("A", "https://a.test")
+      assertEquals(mapOf("A" to "https://a.test"), store.lastSuccessfulFallbackUrls().first())
+    } finally {
+      driver.close()
+      file.delete()
+    }
   }
 }

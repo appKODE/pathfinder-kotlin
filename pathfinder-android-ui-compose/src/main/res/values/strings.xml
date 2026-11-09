@@ -3,6 +3,9 @@
   <string name="pathfinder_url_list_current_env">Active Environment</string>
   <string name="pathfinder_url_list_current_env_change">Change</string>
 
+  <string name="pathfinder_fallbacks">Fallback base urls</string>
+  <string name="pathfinder_fallback_key">%1$s, timeout %2$d ms</string>
+
   <string name="pathfinder_select_environment_title">Change environment</string>
   <string name="pathfinder_url_path_variables">Path variables:</string>
   <string name="pathfinder_url_query_parameters">Query parameters:</string>

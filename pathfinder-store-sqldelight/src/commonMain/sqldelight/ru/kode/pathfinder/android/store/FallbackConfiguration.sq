@@ -1,0 +1,18 @@
+-- baseUrls: newline separated, in the order of trying
+CREATE TABLE FallbackConfiguration (
+  fallbackKey TEXT NOT NULL PRIMARY KEY,
+  baseUrls TEXT NOT NULL,
+  requestTimeout INTEGER NOT NULL
+);
+
+insertOne:
+INSERT OR REPLACE
+INTO FallbackConfiguration
+VALUES ?;
+
+deleteAll:
+DELETE FROM FallbackConfiguration;
+
+findAll:
+SELECT *
+FROM FallbackConfiguration;

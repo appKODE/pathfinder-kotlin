@@ -34,6 +34,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import ru.kode.amvi.component.compose.rememberViewIntents
 import ru.kode.pathfinder.Environment
+import ru.kode.pathfinder.EnvironmentFallbackConfiguration
 import ru.kode.pathfinder.EnvironmentId
 import ru.kode.pathfinder.UrlConfiguration
 import ru.kode.pathfinder.android.ui.compose.R
@@ -58,7 +59,7 @@ internal fun UrlListUi(viewModel: UrlListViewModel) {
         ActiveEnvironmentHeader(content, intents)
         Spacer(modifier = Modifier.height(16.dp))
         Divider()
-        UrlList(content.urls, content.activeEnvironment.additionalBaseUrls, intents)
+        UrlList(content.urls, content.activeEnvironment.additionalBaseUrls, content.fallbacks, intents)
         if (content.showPathVariableEditor != null) {
           PathVariableEditorDialog(props = content.showPathVariableEditor, intents)
         }
@@ -134,9 +135,17 @@ private fun ActiveEnvironmentHeader(state: ViewState.Content, intents: Intents) 
 }
 
 @Composable
-private fun UrlList(urls: List<UrlConfiguration>, additionalBaseUrls: Map<String, String>, intents: Intents) {
+private fun UrlList(
+  urls: List<UrlConfiguration>,
+  additionalBaseUrls: Map<String, String>,
+  fallbacks: List<EnvironmentFallbackConfiguration>,
+  intents: Intents,
+) {
   val expandedIds = remember { mutableStateListOf<UrlConfiguration.Id>() }
   LazyColumn {
+    if (fallbacks.isNotEmpty()) {
+      item { Fallbacks(fallbacks) }
+    }
     itemsIndexed(urls, key = { _, item -> item.id.value }) { index, item ->
       if (index != 0) {
         Divider()
@@ -161,6 +170,25 @@ private fun UrlList(urls: List<UrlConfiguration>, additionalBaseUrls: Map<String
       )
     }
   }
+}
+
+@Composable
+private fun Fallbacks(fallbacks: List<EnvironmentFallbackConfiguration>) {
+  Column(modifier = Modifier.padding(horizontal = 24.dp, vertical = 16.dp)) {
+    Text(
+      style = MaterialTheme.typography.subtitle1,
+      text = stringResource(id = R.string.pathfinder_fallbacks),
+    )
+    fallbacks.forEach { fallback ->
+      Spacer(modifier = Modifier.height(8.dp))
+      Text(
+        style = MaterialTheme.typography.body2,
+        text = stringResource(id = R.string.pathfinder_fallback_key, fallback.key, fallback.requestTimeout),
+      )
+      Text(style = MaterialTheme.typography.caption, text = fallback.baseUrls.joinToString("\n"))
+    }
+  }
+  Divider()
 }
 
 @ExperimentalMaterialApi

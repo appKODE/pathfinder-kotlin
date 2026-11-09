@@ -12,11 +12,7 @@ const val DEFAULT_ENVIRONMENT_PARAMETERS_KEY = "Default"
  * their own proxies.
  * [requestTimeout] is in milliseconds, per attempt.
  */
-data class EnvironmentFallbackConfiguration(
-  val key: String,
-  val baseUrls: List<String>,
-  val requestTimeout: Long,
-)
+data class EnvironmentFallbackConfiguration(val key: String, val baseUrls: List<String>, val requestTimeout: Long,)
 
 /**
  * A plan for one request: try [initialBaseUrl] first, then [retryBaseUrls] in order.

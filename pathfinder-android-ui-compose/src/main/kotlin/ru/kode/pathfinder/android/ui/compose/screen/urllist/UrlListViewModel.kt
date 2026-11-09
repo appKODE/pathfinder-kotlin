@@ -18,15 +18,19 @@ class UrlListViewModel(private val store: Store) : ViewModel<ViewState, Intents>
     // Dispatchers.Default raced, and urls emitted before the content existed were lost
     onEach(
       store.activeEnvironmentId().filterNotNull().flatMapLatest { id ->
-        combine(store.environments(), store.urlConfigurations(id)) { environments, urls ->
-          environments.find { it.id == id }?.let { it to urls }
+        combine(
+          store.environments(),
+          store.urlConfigurations(id),
+          store.fallbackConfigurations(),
+        ) { environments, urls, fallbacks ->
+          environments.find { it.id == id }?.let { Triple(it, urls, fallbacks) }
         }
       }.filterNotNull()
     ) {
-      transitionTo { state, (environment, urls) ->
+      transitionTo { state, (environment, urls, fallbacks) ->
         state.copy(
-          content = state.content?.copy(activeEnvironment = environment, urls = urls)
-            ?: ViewState.Content(activeEnvironment = environment, urls = urls)
+          content = state.content?.copy(activeEnvironment = environment, urls = urls, fallbacks = fallbacks)
+            ?: ViewState.Content(activeEnvironment = environment, urls = urls, fallbacks = fallbacks)
         )
       }
     }

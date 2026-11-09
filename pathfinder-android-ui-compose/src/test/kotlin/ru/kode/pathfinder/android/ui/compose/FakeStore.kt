@@ -9,6 +9,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.yield
 import ru.kode.pathfinder.Configuration
 import ru.kode.pathfinder.Environment
+import ru.kode.pathfinder.EnvironmentFallbackConfiguration
 import ru.kode.pathfinder.EnvironmentId
 import ru.kode.pathfinder.Store
 import ru.kode.pathfinder.UrlConfiguration
@@ -24,6 +25,8 @@ internal class FakeStore : Store {
   private val state = MutableStateFlow(State())
   private val overrides = MutableStateFlow<Map<UrlConfiguration.Id, Overrides>>(emptyMap())
   private var specs = emptyList<UrlSpec>()
+
+  private val fallbacks = MutableStateFlow(emptyList<EnvironmentFallbackConfiguration>())
 
   private data class State(val environments: List<Environment> = emptyList(), val activeId: EnvironmentId? = null)
 
@@ -99,4 +102,10 @@ internal class FakeStore : Store {
       baseUrlKey = baseUrlKey,
     )
   }
+
+  override suspend fun saveFallbackConfigurations(configurations: List<EnvironmentFallbackConfiguration>) {
+    fallbacks.value = configurations
+  }
+
+  override fun fallbackConfigurations(): Flow<List<EnvironmentFallbackConfiguration>> = fallbacks
 }

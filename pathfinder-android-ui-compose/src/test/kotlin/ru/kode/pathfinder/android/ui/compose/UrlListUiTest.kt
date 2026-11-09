@@ -14,6 +14,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
+import ru.kode.pathfinder.EnvironmentFallbackConfiguration
 import ru.kode.pathfinder.PathFinder
 import kotlin.test.assertEquals
 
@@ -114,6 +115,21 @@ class UrlListUiTest {
     waitForNoText("Change environment")
     composeRule.onNodeWithText("auth.dev.example.com").assertDoesNotExist()
     assertEquals(prod.id, runBlocking { store.readActiveEnvironmentId() })
+  }
+
+  @Test
+  fun `shows fallback base urls`() {
+    composeRule.onNodeWithText("Fallback base urls").assertDoesNotExist()
+
+    runBlocking {
+      store.saveFallbackConfigurations(
+        listOf(EnvironmentFallbackConfiguration("RU", listOf("https://ru0.test", "https://ru1.test"), 1000))
+      )
+    }
+
+    waitForText("Fallback base urls")
+    composeRule.onNodeWithText("RU, timeout 1000 ms").assertExists()
+    composeRule.onNodeWithText("https://ru0.test\nhttps://ru1.test").assertExists()
   }
 
   // the view model runs on Dispatchers.Default which compose test idling does not track;

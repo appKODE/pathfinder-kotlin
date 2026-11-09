@@ -235,19 +235,19 @@ class SqlDelightStoreTest {
 
   @Test
   fun `fallback configurations and last successful urls round trip`() = runTest {
-    val ru = EnvironmentFallbackConfiguration("RU", listOf("https://ru0.test", "https://ru1.test"), 1000)
-    val empty = EnvironmentFallbackConfiguration("FR", emptyList(), 2000)
+    val configA = EnvironmentFallbackConfiguration("A", listOf("https://a0.test", "https://a1.test"), 1000)
+    val empty = EnvironmentFallbackConfiguration("B", emptyList(), 2000)
 
-    store.saveFallbackConfigurations(listOf(ru, empty))
-    assertEquals(setOf(ru, empty), store.fallbackConfigurations().first().toSet())
-    store.saveFallbackConfigurations(listOf(ru))
-    assertEquals(listOf(ru), store.fallbackConfigurations().first())
+    store.saveFallbackConfigurations(listOf(configA, empty))
+    assertEquals(setOf(configA, empty), store.fallbackConfigurations().first().toSet())
+    store.saveFallbackConfigurations(listOf(configA))
+    assertEquals(listOf(configA), store.fallbackConfigurations().first())
 
-    store.saveLastSuccessfulFallbackUrl("RU", "https://ru0.test")
-    store.saveLastSuccessfulFallbackUrl("RU", "https://ru1.test")
-    store.saveLastSuccessfulFallbackUrl("FR", "https://fr.test")
+    store.saveLastSuccessfulFallbackUrl("A", "https://a0.test")
+    store.saveLastSuccessfulFallbackUrl("A", "https://a1.test")
+    store.saveLastSuccessfulFallbackUrl("B", "https://b.test")
     assertEquals(
-      mapOf("RU" to "https://ru1.test", "FR" to "https://fr.test"),
+      mapOf("A" to "https://a1.test", "B" to "https://b.test"),
       store.lastSuccessfulFallbackUrls().first()
     )
   }
@@ -256,18 +256,18 @@ class SqlDelightStoreTest {
   fun `PathFinder fallbacks and markFallbackSuccess survive a restart`() = runTest {
     val pathFinder = PathFinder.create(store, configuration)
     pathFinder.updateFallbackEnvironments(
-      listOf(EnvironmentFallbackConfiguration("RU", listOf("https://ru0.test", "https://ru1.test"), 1000))
+      listOf(EnvironmentFallbackConfiguration("A", listOf("https://a0.test", "https://a1.test"), 1000))
     )
-    pathFinder.markFallbackSuccess("RU", "https://ru1.test")
+    pathFinder.markFallbackSuccess("A", "https://a1.test")
     // written in background
-    store.lastSuccessfulFallbackUrls().awaitFirst { it["RU"] == "https://ru1.test" }
+    store.lastSuccessfulFallbackUrls().awaitFirst { it["A"] == "https://a1.test" }
 
     val restarted = PathFinder.create(store, configuration)
-    restarted.updateFallbackKey("RU")
+    restarted.updateFallbackKey("A")
 
     val plan = restarted.readFallbackPlan(dev.baseUrl)
-    assertEquals("https://ru1.test", plan.initialBaseUrl)
-    assertEquals(listOf("https://dev.example.com", "https://ru0.test"), plan.retryBaseUrls)
+    assertEquals("https://a1.test", plan.initialBaseUrl)
+    assertEquals(listOf("https://dev.example.com", "https://a0.test"), plan.retryBaseUrls)
     assertEquals(1000L, plan.requestTimeout)
   }
 

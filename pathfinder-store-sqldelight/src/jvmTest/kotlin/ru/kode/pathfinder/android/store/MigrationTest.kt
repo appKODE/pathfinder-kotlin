@@ -124,8 +124,8 @@ class MigrationTest {
       assertEquals(listOf(dev, dynamic), store.readEnvironments())
       assertEquals(mapOf("id" to "42"), store.readUrlConfiguration(users.id, prod.id)!!.pathVariableValues)
       assertEquals(emptyList(), store.fallbackConfigurations().first())
-      store.saveLastSuccessfulFallbackUrl("RU", "https://ru.test")
-      assertEquals(mapOf("RU" to "https://ru.test"), store.lastSuccessfulFallbackUrls().first())
+      store.saveLastSuccessfulFallbackUrl("A", "https://a.test")
+      assertEquals(mapOf("A" to "https://a.test"), store.lastSuccessfulFallbackUrls().first())
     } finally {
       driver.close()
       file.delete()

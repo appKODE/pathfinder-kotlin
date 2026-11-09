@@ -31,12 +31,12 @@ interface Store {
   fun fallbackConfigurations(): Flow<List<EnvironmentFallbackConfiguration>> = flowOf(emptyList())
 
   /**
-   * Remembers [baseUrl] as the last one which served a request in region [regionCode].
+   * Remembers [baseUrl] as the last one which served a request for fallback [key].
    */
-  suspend fun saveLastSuccessfulFallbackUrl(regionCode: String, baseUrl: String) = Unit
+  suspend fun saveLastSuccessfulFallbackUrl(key: String, baseUrl: String) = Unit
 
   /**
-   * The last successful base url by region code.
+   * The last successful base url by fallback key.
    */
   fun lastSuccessfulFallbackUrls(): Flow<Map<String, String>> = flowOf(emptyMap())
 }

@@ -1,10 +1,10 @@
 CREATE TABLE FallbackConfiguration (
-  regionCode TEXT NOT NULL PRIMARY KEY,
+  fallbackKey TEXT NOT NULL PRIMARY KEY,
   baseUrls TEXT NOT NULL,
   requestTimeout INTEGER NOT NULL
 );
 
 CREATE TABLE LastSuccessfulFallback (
-  regionCode TEXT NOT NULL PRIMARY KEY,
+  fallbackKey TEXT NOT NULL PRIMARY KEY,
   baseUrl TEXT NOT NULL
 );

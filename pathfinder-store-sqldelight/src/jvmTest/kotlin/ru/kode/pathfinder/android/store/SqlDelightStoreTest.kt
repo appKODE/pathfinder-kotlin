@@ -263,7 +263,7 @@ class SqlDelightStoreTest {
     store.lastSuccessfulFallbackUrls().awaitFirst { it["RU"] == "https://ru1.test" }
 
     val restarted = PathFinder.create(store, configuration)
-    restarted.updateApiFallbackRegionCode("RU")
+    restarted.updateFallbackKey("RU")
 
     val plan = restarted.readFallbackPlan(dev.baseUrl)
     assertEquals("https://ru1.test", plan.initialBaseUrl)

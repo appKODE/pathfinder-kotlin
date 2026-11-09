@@ -183,7 +183,7 @@ private fun Fallbacks(fallbacks: List<EnvironmentFallbackConfiguration>) {
       Spacer(modifier = Modifier.height(8.dp))
       Text(
         style = MaterialTheme.typography.body2,
-        text = stringResource(id = R.string.pathfinder_fallback_region, fallback.regionCode, fallback.requestTimeout),
+        text = stringResource(id = R.string.pathfinder_fallback_key, fallback.key, fallback.requestTimeout),
       )
       Text(style = MaterialTheme.typography.caption, text = fallback.baseUrls.joinToString("\n"))
     }

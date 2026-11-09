@@ -230,7 +230,7 @@ class SqlDelightStore(driver: SqlDriver) : Store {
         database.fallbackConfigurationQueries.deleteAll()
         configurations.forEach {
           database.fallbackConfigurationQueries.insertOne(
-            FallbackConfigurationStorageModel(it.regionCode, it.baseUrls.joinToString("\n"), it.requestTimeout)
+            FallbackConfigurationStorageModel(it.key, it.baseUrls.joinToString("\n"), it.requestTimeout)
           )
         }
       }
@@ -239,20 +239,20 @@ class SqlDelightStore(driver: SqlDriver) : Store {
 
   override fun fallbackConfigurations(): Flow<List<EnvironmentFallbackConfiguration>> =
     database.fallbackConfigurationQueries
-      .findAll { regionCode, baseUrls, requestTimeout ->
-        EnvironmentFallbackConfiguration(regionCode, baseUrls.split("\n").filter { it.isNotEmpty() }, requestTimeout)
+      .findAll { key, baseUrls, requestTimeout ->
+        EnvironmentFallbackConfiguration(key, baseUrls.split("\n").filter { it.isNotEmpty() }, requestTimeout)
       }
       .asFlow()
       .map { it.executeAsList() }
 
-  override suspend fun saveLastSuccessfulFallbackUrl(regionCode: String, baseUrl: String) {
+  override suspend fun saveLastSuccessfulFallbackUrl(key: String, baseUrl: String) {
     withContext(Dispatchers.IO) {
-      database.lastSuccessfulFallbackQueries.upsert(LastSuccessfulFallback(regionCode, baseUrl))
+      database.lastSuccessfulFallbackQueries.upsert(LastSuccessfulFallback(key, baseUrl))
     }
   }
 
   override fun lastSuccessfulFallbackUrls(): Flow<Map<String, String>> = database.lastSuccessfulFallbackQueries
     .findAll()
     .asFlow()
-    .map { query -> query.executeAsList().associate { it.regionCode to it.baseUrl } }
+    .map { query -> query.executeAsList().associate { it.fallbackKey to it.baseUrl } }
 }

@@ -1,6 +1,6 @@
 -- baseUrls: newline separated, in the order of trying
 CREATE TABLE FallbackConfiguration (
-  regionCode TEXT NOT NULL PRIMARY KEY,
+  fallbackKey TEXT NOT NULL PRIMARY KEY,
   baseUrls TEXT NOT NULL,
   requestTimeout INTEGER NOT NULL
 );

@@ -19,9 +19,9 @@ class FallbackTest {
   }
 
   @Test
-  fun `plan tries primary first and then fallbacks of the region in order`() = runTest {
+  fun `plan tries primary first and then fallbacks of the key in order`() = runTest {
     val pathFinder = pathFinder()
-    pathFinder.updateApiFallbackRegionCode("RU")
+    pathFinder.updateFallbackKey("RU")
 
     assertEquals(
       FallbackRequestPlan("https://primary.test", listOf("https://ru0.test", "https://ru1.test"), 1000, "RU"),
@@ -30,19 +30,19 @@ class FallbackTest {
   }
 
   @Test
-  fun `region without a configuration and an unknown region use the default one`() = runTest {
+  fun `key without a configuration and an unknown key use the default one`() = runTest {
     val pathFinder = pathFinder()
 
     val expected = FallbackRequestPlan("https://primary.test", listOf("https://d0.test"), 2000, "Default")
     assertEquals(expected, pathFinder.readFallbackPlan(prod.baseUrl))
-    pathFinder.updateApiFallbackRegionCode("FR")
+    pathFinder.updateFallbackKey("FR")
     assertEquals(expected, pathFinder.readFallbackPlan(prod.baseUrl))
   }
 
   @Test
   fun `no configurations - plan has primary only and no timeout`() = runTest {
     val pathFinder = PathFinder.create(FakeStore(), configuration)
-    pathFinder.updateApiFallbackRegionCode("RU")
+    pathFinder.updateFallbackKey("RU")
 
     assertEquals(
       FallbackRequestPlan("https://primary.test", emptyList(), null, "RU"),
@@ -53,7 +53,7 @@ class FallbackTest {
   @Test
   fun `allowFallbacks = false - plan has primary only`() = runTest {
     val pathFinder = pathFinder()
-    pathFinder.updateApiFallbackRegionCode("RU")
+    pathFinder.updateFallbackKey("RU")
     pathFinder.markFallbackSuccess("RU", "https://ru1.test")
 
     val plan = pathFinder.readFallbackPlan(prod.baseUrl, allowFallbacks = false)
@@ -65,7 +65,7 @@ class FallbackTest {
   @Test
   fun `markFallbackSuccess moves the url first and keeps the order of the rest`() = runTest {
     val pathFinder = pathFinder()
-    pathFinder.updateApiFallbackRegionCode("RU")
+    pathFinder.updateFallbackKey("RU")
 
     pathFinder.markFallbackSuccess("RU", "https://ru1.test")
     val plan = pathFinder.readFallbackPlan(prod.baseUrl)
@@ -81,13 +81,13 @@ class FallbackTest {
   }
 
   @Test
-  fun `markFallbackSuccess is per region and ignores urls which are not in the plan`() = runTest {
+  fun `markFallbackSuccess is per key and ignores urls which are not in the plan`() = runTest {
     val pathFinder = pathFinder()
     pathFinder.markFallbackSuccess("RU", "https://ru1.test")
     pathFinder.markFallbackSuccess("Default", "https://stale.test")
 
     assertEquals("https://primary.test", pathFinder.readFallbackPlan(prod.baseUrl).initialBaseUrl)
-    pathFinder.updateApiFallbackRegionCode("RU")
+    pathFinder.updateFallbackKey("RU")
     assertEquals("https://ru1.test", pathFinder.readFallbackPlan(prod.baseUrl).initialBaseUrl)
   }
 }

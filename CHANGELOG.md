@@ -1,11 +1,11 @@
 # Changelog
 
 ## 0.14.0 - 2026-11-09
-* Fallback base urls by region: `PathFinder.updateFallbackEnvironments(configurations)` stores ordered fallback base
-  urls and a per-attempt timeout (`EnvironmentFallbackConfiguration`) keyed by region code,
-  `DEFAULT_ENVIRONMENT_PARAMETERS_KEY` is used for a region without its own configuration.
-  `updateApiFallbackRegionCode(code)` selects the region, `readFallbackPlan(primaryBaseUrl, allowFallbacks)` returns
-  the base urls to try for one request (`FallbackRequestPlan`), `markFallbackSuccess(regionCode, baseUrl)` makes the
+* Fallback base urls: `PathFinder.updateFallbackEnvironments(configurations)` stores ordered fallback base
+  urls and a per-attempt timeout (`EnvironmentFallbackConfiguration`) under an app-chosen key (e.g. a country code),
+  `DEFAULT_ENVIRONMENT_PARAMETERS_KEY` is used for a key without its own configuration.
+  `updateFallbackKey(key)` selects the configuration, `readFallbackPlan(primaryBaseUrl, allowFallbacks)` returns
+  the base urls to try for one request (`FallbackRequestPlan`), `markFallbackSuccess(key, baseUrl)` makes the
   base url which served a request go first in the next plans
 * `SqlDelightStore` persists fallback configurations and last successful base urls. Store migration 3 adds the
   `FallbackConfiguration` and `LastSuccessfulFallback` tables, stored environments and overrides are kept

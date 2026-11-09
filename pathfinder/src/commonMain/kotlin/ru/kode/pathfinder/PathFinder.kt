@@ -59,7 +59,7 @@ class PathFinder private constructor(val store: Store, initialEnvironment: Envir
 
   private val fallbackConfigurations = MutableStateFlow(emptyList<EnvironmentFallbackConfiguration>())
   private val lastSuccessfulFallbackUrls = MutableStateFlow(emptyMap<String, String>())
-  private val fallbackRegionCode = MutableStateFlow<String?>(null)
+  private val fallbackKey = MutableStateFlow<String?>(null)
   private val fallbackMutex = Mutex()
 
   // copy-on-write: listeners are notified without a lock
@@ -170,27 +170,28 @@ class PathFinder private constructor(val store: Store, initialEnvironment: Envir
   }
 
   /**
-   * Selects the fallback configuration of region [code]. Without a configuration for it (or with a null [code])
+   * Selects the fallback configuration with [EnvironmentFallbackConfiguration.key] == [key]. Without a configuration
+   * for it (or with a null [key])
    * the one of [DEFAULT_ENVIRONMENT_PARAMETERS_KEY] is used.
    */
-  fun updateApiFallbackRegionCode(code: String?) {
-    fallbackRegionCode.value = code
+  fun updateFallbackKey(key: String?) {
+    fallbackKey.value = key
   }
 
   /**
    * Builds a plan for one request: [primaryBaseUrl] (usually `currentEnvironment.baseUrl`) and the fallback
-   * base urls of the current region in their configured order, except that the one which last succeeded
+   * base urls of the selected key in their configured order, except that the one which last succeeded
    * (see [markFallbackSuccess]) goes first. With [allowFallbacks] = false the plan has [primaryBaseUrl] only.
    */
   fun readFallbackPlan(primaryBaseUrl: String, allowFallbacks: Boolean = true): FallbackRequestPlan {
-    val regionCode = fallbackRegionCode.value
+    val key = fallbackKey.value
     val configurations = fallbackConfigurations.value
-    val configuration = configurations.find { it.regionCode == regionCode }
-      ?: configurations.find { it.regionCode == DEFAULT_ENVIRONMENT_PARAMETERS_KEY }
-    val planRegionCode = configuration?.regionCode ?: regionCode ?: DEFAULT_ENVIRONMENT_PARAMETERS_KEY
+    val configuration = configurations.find { it.key == key }
+      ?: configurations.find { it.key == DEFAULT_ENVIRONMENT_PARAMETERS_KEY }
+    val planKey = configuration?.key ?: key ?: DEFAULT_ENVIRONMENT_PARAMETERS_KEY
     val candidates = if (allowFallbacks) {
       val urls = listOf(primaryBaseUrl) + configuration?.baseUrls.orEmpty()
-      val lastSuccessful = lastSuccessfulFallbackUrls.value[planRegionCode]?.takeIf { it in urls }
+      val lastSuccessful = lastSuccessfulFallbackUrls.value[planKey]?.takeIf { it in urls }
       if (lastSuccessful != null) listOf(lastSuccessful) + urls.filter { it != lastSuccessful } else urls
     } else {
       listOf(primaryBaseUrl)
@@ -199,22 +200,22 @@ class PathFinder private constructor(val store: Store, initialEnvironment: Envir
       initialBaseUrl = candidates.first(),
       retryBaseUrls = candidates.drop(1),
       requestTimeout = configuration?.requestTimeout,
-      regionCode = planRegionCode,
+      key = planKey,
     )
   }
 
   /**
-   * Remembers [baseUrl] (primary or a fallback of [FallbackRequestPlan]) as the one which served a request in
-   * [regionCode] (see [FallbackRequestPlan.regionCode]), so the next [readFallbackPlan] tries it first.
+   * Remembers [baseUrl] (primary or a fallback of [FallbackRequestPlan]) as the one which served a request for
+   * [key] (see [FallbackRequestPlan.key]), so the next [readFallbackPlan] tries it first.
    * Takes effect immediately, the store is updated in background.
    */
-  fun markFallbackSuccess(regionCode: String, baseUrl: String) {
-    if (lastSuccessfulFallbackUrls.value[regionCode] == baseUrl) return
-    lastSuccessfulFallbackUrls.update { it + (regionCode to baseUrl) }
+  fun markFallbackSuccess(key: String, baseUrl: String) {
+    if (lastSuccessfulFallbackUrls.value[key] == baseUrl) return
+    lastSuccessfulFallbackUrls.update { it + (key to baseUrl) }
     storeScope.launch {
       // writes the latest value, so that concurrent calls can't leave an older one in the store
       fallbackMutex.withLock {
-        lastSuccessfulFallbackUrls.value[regionCode]?.let { store.saveLastSuccessfulFallbackUrl(regionCode, it) }
+        lastSuccessfulFallbackUrls.value[key]?.let { store.saveLastSuccessfulFallbackUrl(key, it) }
       }
     }
   }

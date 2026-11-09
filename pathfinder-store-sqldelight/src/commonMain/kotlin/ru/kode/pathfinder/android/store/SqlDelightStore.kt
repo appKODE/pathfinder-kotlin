@@ -10,6 +10,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
 import ru.kode.pathfinder.Configuration
 import ru.kode.pathfinder.Environment
+import ru.kode.pathfinder.EnvironmentFallbackConfiguration
 import ru.kode.pathfinder.EnvironmentId
 import ru.kode.pathfinder.Store
 import ru.kode.pathfinder.UrlConfiguration
@@ -22,6 +23,7 @@ import ru.kode.pathfinder.android.store.mapper.toDomainModel
 import ru.kode.pathfinder.android.store.mapper.toStorageModel
 import ru.kode.pathfinder.android.store.mapper.toUrlConfigurationStorageModel
 import ru.kode.pathfinder.android.store.Environment as EnvironmentStorageModel
+import ru.kode.pathfinder.android.store.FallbackConfiguration as FallbackConfigurationStorageModel
 
 /**
  * [Store] backed by SQLDelight. Create the [driver] with [PathFinderDatabase.Schema],
@@ -221,4 +223,36 @@ class SqlDelightStore(driver: SqlDriver) : Store {
       )
     }
   }
+
+  override suspend fun saveFallbackConfigurations(configurations: List<EnvironmentFallbackConfiguration>) {
+    withContext(Dispatchers.IO) {
+      database.transaction {
+        database.fallbackConfigurationQueries.deleteAll()
+        configurations.forEach {
+          database.fallbackConfigurationQueries.insertOne(
+            FallbackConfigurationStorageModel(it.regionCode, it.baseUrls.joinToString("\n"), it.requestTimeout)
+          )
+        }
+      }
+    }
+  }
+
+  override fun fallbackConfigurations(): Flow<List<EnvironmentFallbackConfiguration>> =
+    database.fallbackConfigurationQueries
+      .findAll { regionCode, baseUrls, requestTimeout ->
+        EnvironmentFallbackConfiguration(regionCode, baseUrls.split("\n").filter { it.isNotEmpty() }, requestTimeout)
+      }
+      .asFlow()
+      .map { it.executeAsList() }
+
+  override suspend fun saveLastSuccessfulFallbackUrl(regionCode: String, baseUrl: String) {
+    withContext(Dispatchers.IO) {
+      database.lastSuccessfulFallbackQueries.upsert(LastSuccessfulFallback(regionCode, baseUrl))
+    }
+  }
+
+  override fun lastSuccessfulFallbackUrls(): Flow<Map<String, String>> = database.lastSuccessfulFallbackQueries
+    .findAll()
+    .asFlow()
+    .map { query -> query.executeAsList().associate { it.regionCode to it.baseUrl } }
 }

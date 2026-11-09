@@ -35,6 +35,8 @@ kover {
           "ru.kode.pathfinder.android.store.PathVariable",
           "ru.kode.pathfinder.android.store.QueryParameter",
           "ru.kode.pathfinder.android.store.UrlConfiguration",
+          "ru.kode.pathfinder.android.store.FallbackConfiguration",
+          "ru.kode.pathfinder.android.store.LastSuccessfulFallback",
           "ru.kode.pathfinder.android.store.Find*",
         )
         // lambdas of the @Preview functions, which annotatedBy does not reach

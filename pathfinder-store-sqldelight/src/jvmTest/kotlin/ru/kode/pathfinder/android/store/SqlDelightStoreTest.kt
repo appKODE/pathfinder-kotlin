@@ -11,6 +11,7 @@ import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
 import ru.kode.pathfinder.Configuration
 import ru.kode.pathfinder.Environment
+import ru.kode.pathfinder.EnvironmentFallbackConfiguration
 import ru.kode.pathfinder.EnvironmentId
 import ru.kode.pathfinder.PathFinder
 import ru.kode.pathfinder.UrlSpec
@@ -230,6 +231,44 @@ class SqlDelightStoreTest {
     // restart keeps the runtime change
     val restarted = PathFinder.create(store, configuration)
     assertEquals("https://dynamic.example.com", restarted.currentEnvironment.baseUrl)
+  }
+
+  @Test
+  fun `fallback configurations and last successful urls round trip`() = runTest {
+    val ru = EnvironmentFallbackConfiguration("RU", listOf("https://ru0.test", "https://ru1.test"), 1000)
+    val empty = EnvironmentFallbackConfiguration("FR", emptyList(), 2000)
+
+    store.saveFallbackConfigurations(listOf(ru, empty))
+    assertEquals(setOf(ru, empty), store.fallbackConfigurations().first().toSet())
+    store.saveFallbackConfigurations(listOf(ru))
+    assertEquals(listOf(ru), store.fallbackConfigurations().first())
+
+    store.saveLastSuccessfulFallbackUrl("RU", "https://ru0.test")
+    store.saveLastSuccessfulFallbackUrl("RU", "https://ru1.test")
+    store.saveLastSuccessfulFallbackUrl("FR", "https://fr.test")
+    assertEquals(
+      mapOf("RU" to "https://ru1.test", "FR" to "https://fr.test"),
+      store.lastSuccessfulFallbackUrls().first()
+    )
+  }
+
+  @Test
+  fun `PathFinder fallbacks and markFallbackSuccess survive a restart`() = runTest {
+    val pathFinder = PathFinder.create(store, configuration)
+    pathFinder.updateFallbackEnvironments(
+      listOf(EnvironmentFallbackConfiguration("RU", listOf("https://ru0.test", "https://ru1.test"), 1000))
+    )
+    pathFinder.markFallbackSuccess("RU", "https://ru1.test")
+    // written in background
+    store.lastSuccessfulFallbackUrls().awaitFirst { it["RU"] == "https://ru1.test" }
+
+    val restarted = PathFinder.create(store, configuration)
+    restarted.updateApiFallbackRegionCode("RU")
+
+    val plan = restarted.readFallbackPlan(dev.baseUrl)
+    assertEquals("https://ru1.test", plan.initialBaseUrl)
+    assertEquals(listOf("https://dev.example.com", "https://ru0.test"), plan.retryBaseUrls)
+    assertEquals(1000L, plan.requestTimeout)
   }
 
   // flows emit on a real dispatcher, so wait in real time

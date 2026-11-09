@@ -4,12 +4,17 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.merge
 import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
-import kotlin.concurrent.Volatile
 import kotlin.concurrent.atomics.AtomicReference
 import kotlin.concurrent.atomics.ExperimentalAtomicApi
 import kotlin.concurrent.atomics.update
@@ -24,7 +29,10 @@ class PathFinder private constructor(val store: Store, initialEnvironment: Envir
      */
     suspend fun create(store: Store, configuration: Configuration): PathFinder {
       store.saveConfiguration(configuration)
-      return PathFinder(store, store.readActiveEnvironment())
+      return PathFinder(store, store.readActiveEnvironment()).apply {
+        fallbackConfigurations.value = store.fallbackConfigurations().first()
+        lastSuccessfulFallbackUrls.value = store.lastSuccessfulFallbackUrls().first()
+      }
     }
 
     private suspend fun Store.readActiveEnvironment(): Environment {
@@ -37,13 +45,22 @@ class PathFinder private constructor(val store: Store, initialEnvironment: Envir
   private val mutationMutex = Mutex()
   private val refreshMutex = Mutex()
 
-  @Volatile
-  private var _currentEnvironment: Environment = initialEnvironment
+  private val _currentEnvironment = MutableStateFlow(initialEnvironment)
 
   /**
    * The active environment. Reflects the latest switch and the latest change of its properties (e.g. `baseUrl`).
    */
-  val currentEnvironment: Environment get() = _currentEnvironment
+  val currentEnvironment: Environment get() = _currentEnvironment.value
+
+  /**
+   * Emits [currentEnvironment] and each of its later changes, the same ones [Listener] is notified about.
+   */
+  val currentEnvironmentFlow: StateFlow<Environment> = _currentEnvironment.asStateFlow()
+
+  private val fallbackConfigurations = MutableStateFlow(emptyList<EnvironmentFallbackConfiguration>())
+  private val lastSuccessfulFallbackUrls = MutableStateFlow(emptyMap<String, String>())
+  private val fallbackRegionCode = MutableStateFlow<String?>(null)
+  private val fallbackMutex = Mutex()
 
   // copy-on-write: listeners are notified without a lock
   private val listeners = AtomicReference(emptyList<Listener>())
@@ -62,7 +79,7 @@ class PathFinder private constructor(val store: Store, initialEnvironment: Envir
     id: UrlSpecId,
     pathVariables: Map<String, String> = emptyMap(),
     queryParameters: Map<String, String> = emptyMap(),
-  ): String = buildUrl(_currentEnvironment.id, id, pathVariables, queryParameters)
+  ): String = buildUrl(currentEnvironment.id, id, pathVariables, queryParameters)
 
   /**
    * Builds url for [id] using environment [environmentId] instead of the active one.
@@ -136,9 +153,69 @@ class PathFinder private constructor(val store: Store, initialEnvironment: Envir
   // Always reads the latest store state, so a late flow emission can never roll back a newer state
   private suspend fun refresh() = refreshMutex.withLock {
     val environment = store.readActiveEnvironment()
-    if (environment != _currentEnvironment) {
-      _currentEnvironment = environment
+    if (environment != _currentEnvironment.value) {
+      _currentEnvironment.value = environment
       listeners.load().forEach { it.onEnvironmentSwitch(environment.id) }
+    }
+  }
+
+  /**
+   * Replaces all fallback configurations and stores them.
+   */
+  suspend fun updateFallbackEnvironments(configurations: List<EnvironmentFallbackConfiguration>) {
+    fallbackMutex.withLock {
+      store.saveFallbackConfigurations(configurations)
+      fallbackConfigurations.value = configurations
+    }
+  }
+
+  /**
+   * Selects the fallback configuration of region [code]. Without a configuration for it (or with a null [code])
+   * the one of [DEFAULT_ENVIRONMENT_PARAMETERS_KEY] is used.
+   */
+  fun updateApiFallbackRegionCode(code: String?) {
+    fallbackRegionCode.value = code
+  }
+
+  /**
+   * Builds a plan for one request: [primaryBaseUrl] (usually `currentEnvironment.baseUrl`) and the fallback
+   * base urls of the current region in their configured order, except that the one which last succeeded
+   * (see [markFallbackSuccess]) goes first. With [allowFallbacks] = false the plan has [primaryBaseUrl] only.
+   */
+  fun readFallbackPlan(primaryBaseUrl: String, allowFallbacks: Boolean = true): FallbackRequestPlan {
+    val regionCode = fallbackRegionCode.value
+    val configurations = fallbackConfigurations.value
+    val configuration = configurations.find { it.regionCode == regionCode }
+      ?: configurations.find { it.regionCode == DEFAULT_ENVIRONMENT_PARAMETERS_KEY }
+    val planRegionCode = configuration?.regionCode ?: regionCode ?: DEFAULT_ENVIRONMENT_PARAMETERS_KEY
+    val candidates = if (allowFallbacks) {
+      val urls = listOf(primaryBaseUrl) + configuration?.baseUrls.orEmpty()
+      val lastSuccessful = lastSuccessfulFallbackUrls.value[planRegionCode]?.takeIf { it in urls }
+      if (lastSuccessful != null) listOf(lastSuccessful) + urls.filter { it != lastSuccessful } else urls
+    } else {
+      listOf(primaryBaseUrl)
+    }
+    return FallbackRequestPlan(
+      initialBaseUrl = candidates.first(),
+      retryBaseUrls = candidates.drop(1),
+      requestTimeout = configuration?.requestTimeout,
+      regionCode = planRegionCode,
+    )
+  }
+
+  /**
+   * Remembers [baseUrl] (primary or a fallback of [FallbackRequestPlan]) as the one which served a request in
+   * [regionCode] (see [FallbackRequestPlan.regionCode]), so the next [readFallbackPlan] tries it first.
+   * Takes effect immediately, the store is updated in background.
+   */
+  fun markFallbackSuccess(regionCode: String, baseUrl: String) {
+    if (lastSuccessfulFallbackUrls.value[regionCode] == baseUrl) return
+    lastSuccessfulFallbackUrls.update { it + (regionCode to baseUrl) }
+    storeScope.launch {
+      // writes the latest value, so that concurrent calls can't leave an older one in the store
+      fallbackMutex.withLock {
+        lastSuccessfulFallbackUrls.value[regionCode]?.let { store.saveLastSuccessfulFallbackUrl(regionCode, it) }
+      }
     }
   }
 

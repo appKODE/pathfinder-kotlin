@@ -4,6 +4,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
@@ -172,6 +174,24 @@ class PathFinderTest {
 
     assertEquals(stage, pathFinder.currentEnvironment)
     assertEquals("https://stage.example.com/users/1", pathFinder.buildUrl(users.id, mapOf("id" to "1")))
+  }
+
+  @Test
+  fun `currentEnvironmentFlow emits the active environment and its changes`() = runTest {
+    val pathFinder = PathFinder.create(FakeStore(), configuration)
+    val emitted = ConcurrentList<Environment>()
+    backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
+      pathFinder.currentEnvironmentFlow.collect { emitted.add(it) }
+    }
+    val dynamic = prod.copy(baseUrl = "https://dynamic.example.com")
+
+    pathFinder.switchEnvironment(prod.id)
+    awaitUntil { emitted.size == 2 }
+    pathFinder.updateEnvironment(prod.id) { dynamic }
+    awaitUntil { emitted.size == 3 }
+
+    assertEquals(listOf(dev, prod, dynamic), emitted.toList())
+    assertEquals(dynamic, pathFinder.currentEnvironment)
   }
 
   @Test

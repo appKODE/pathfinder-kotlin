@@ -17,7 +17,7 @@ android {
   namespace = "ru.kode.pathfinder.android.ui.compose"
 
   defaultConfig {
-    minSdk = 26
+    minSdk = 23
     aarMetadata {
       minCompileSdk = 26
     }

@@ -21,7 +21,7 @@ kotlin {
   androidLibrary {
     namespace = "ru.kode.pathfinder.android.store"
     compileSdk = libs.versions.compileSdk.get().toInt()
-    minSdk = 26
+    minSdk = 23
   }
 
   iosArm64()

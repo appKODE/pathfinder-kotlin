@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.14.1 - 2026-11-11
+* `pathfinder-store-sqldelight` and `pathfinder-android-ui-compose` lower Android `minSdk` from 26 to 23 (the AndroidX
+  minimum): they use no API above 23, apps with `minSdk` 23-25 failed the manifest merge
+
 ## 0.14.0 - 2026-11-09
 * Fallback base urls: `PathFinder.updateFallbackEnvironments(configurations)` stores ordered fallback base
   urls and a per-attempt timeout (`EnvironmentFallbackConfiguration`) under an app-chosen key (e.g. a country code),

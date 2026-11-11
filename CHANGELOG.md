@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.14.2 - 2026-11-11
+* `pathfinder-android-ui-compose` moves to amvi 0.10.0, which depends on `ru.kode:unicorn2` 2.3.0 instead of
+  `ru.dimsuz:unicorn2-jvm` 2.2.0: apps on `ru.kode:unicorn2` failed `checkDuplicateClasses`
+
 ## 0.14.1 - 2026-11-11
 * `pathfinder-store-sqldelight` and `pathfinder-android-ui-compose` lower Android `minSdk` from 26 to 23 (the AndroidX
   minimum): they use no API above 23, apps with `minSdk` 23-25 failed the manifest merge
